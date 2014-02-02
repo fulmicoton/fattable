@@ -251,7 +251,7 @@
           this.scrollTo(0, this.y);
         }
         _ref4 = me.visible(-this.x, -this.y), i = _ref4[0], j = _ref4[1];
-        snapped_x = closest(-this.x, me.col_offset[j], me.col_offset[j + 1]);
+        snapped_x = closest(-this.x, me.col_offset[j], me.col_offset[j + 1]) | 0;
         snapped_y = closest(-this.y, i * me.row_height, (i + 1) * me.row_height);
         this.scrollTo(-snapped_x, -snapped_y);
         me.headerScroll.scrollTo(-snapped_x, 0);

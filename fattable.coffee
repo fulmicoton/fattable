@@ -199,7 +199,7 @@ class TableView
             if @x > 0
                 @scrollTo 0, @y
             [i,j] = me.visible -@x,-@y
-            snapped_x = closest -@x, me.col_offset[j], me.col_offset[j+1]
+            snapped_x = closest(-@x, me.col_offset[j], me.col_offset[j+1]) | 0
             snapped_y = closest -@y, i * me.row_height, (i+1)*me.row_height
             @scrollTo -snapped_x, -snapped_y
             me.headerScroll.scrollTo -snapped_x, 0

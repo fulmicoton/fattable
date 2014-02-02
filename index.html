@@ -13,11 +13,11 @@
     <script>
 
 
-    var nb_cols = 10000;
+    var nb_cols = 100000;
     var nb_rows = 1000000;
     var column_widths = [];
     for (var i=0; i<nb_cols ; i++) {
-        var column_width = 60 + Math.random() * 80;
+        var column_width = (60 + Math.random() * 80 | 0);
         column_widths.push(column_width);
     }
     var layout = {

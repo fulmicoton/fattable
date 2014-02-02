@@ -22,6 +22,9 @@ body {
   left: 0;
   background-color: #f0f0f0;
 }
+#container div {
+  overflow: hidden;
+}
 #container div.viewport > div {
   padding: 2px;
   position: absolute;

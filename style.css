@@ -1,0 +1,40 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+html {
+  height: 100%;
+}
+html,
+body {
+  min-height: 100%;
+  width: auto;
+  -ms-touch-action: none;
+  overflow: hidden;
+}
+#container {
+  position: absolute;
+  z-index: 1;
+  width: 100%;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background-color: #f0f0f0;
+}
+#container div.viewport > div {
+  padding: 2px;
+  position: absolute;
+  background-color: white;
+  font-size: 12px;
+  font-family: sans-serif;
+}
+#container div.viewport {
+  z-index: 1;
+  width: 100%;
+}
+#coords {
+  position: fixed;
+  top: 0;
+  left: 0;
+}

@@ -1,10 +1,5 @@
 
 
-
-generate_table = (m,n)->
-    (  ( i + "," + j  for j in [0...n] by 1) for i in [0...m] by 1)
-
-
 sum = (arr)->
     s = 0
     for x in arr
@@ -21,16 +16,16 @@ cumsum = (arr)->
     cs
 
 class TableData
-
-    constructor: (@data)->
+    # TODO make it asynchronous
+    constructor: (@_nb_rows, @_nb_cols)->
     get: (i,j)->
-        @data[i][j]
+        i + "," + j
     header: (i)->
         "col " + i
     nb_cols: ->
-        @data[0].length
+        @_nb_cols
     nb_rows: ->
-        @data.length
+        @_nb_rows
 
 scroll_options =
     mouseWheel: true
@@ -38,15 +33,15 @@ scroll_options =
     scrollX: true
     probeType: 3
     interactiveScrollbars: true
-    momentum: false
+    deceleration: 0.01
     keyBindings:
-        pageUp: 33,
-        pageDown: 34,
-        end: 35,
-        home: 36,
-        left: 37,
-        up: 38,
-        right: 39,
+        pageUp: 33
+        pageDown: 34
+        end: 35
+        home: 36
+        left: 37
+        up: 38
+        right: 39
         down: 40
 
 
@@ -71,6 +66,16 @@ binary_search = (arr, x)->
 distance = (a1, a2)->
     Math.abs(a2-a1)
 
+closest = (x, vals...)->
+    d = 99999
+    res = undefined
+    for x_ in vals
+        d_ = distance x,x_
+        if d_ < d
+            d = d_
+            res = x_
+    res
+
 class TableView
 
     constructor: (container, @data, @layout)->
@@ -80,10 +85,11 @@ class TableView
             @container = container
         @nb_cols = @data.nb_cols()
         @nb_rows = @data.nb_rows()
-        @W = sum @layout.column_width
+        @W = sum @layout.column_widths
+        @row_height  = @layout.row_height
         @H = @layout.row_height * @nb_rows
-        @col_offset = cumsum @layout.column_width
-        @min_col = Math.min.apply null, @layout.column_width
+        @col_offset = cumsum @layout.column_widths
+        @min_col = Math.min.apply null, @layout.column_widths
         onDomReady = =>
             document.removeEventListener "DOMContentLoaded", arguments.callee, false
             @setup()
@@ -119,7 +125,7 @@ class TableView
             @headerContainer.innerHtml = ""
 
         @w = @container.offsetWidth
-        @h = @container.offsetHeight - @layout.columnHeaderHeight
+        @h = @container.offsetHeight - @layout.header_height
 
         @last_i = 0
         @last_j = 0
@@ -130,21 +136,21 @@ class TableView
         @headerContainer = document.createElement "div"
         @headerContainer.style.position =  "absolute"
         @headerContainer.style.top = "0px";
-        @headerContainer.style.height = @layout.columnHeaderHeight + "px";
+        @headerContainer.style.height = @layout.header_height + "px";
         @headerContainer.style.width = "100%";
         @headerContainer.className = "header-container"
         
         @headerViewport =  document.createElement "div"
         @headerViewport.className = "viewport"
         @headerViewport.style.width = @W + "px"
-        @headerViewport.style.height = @layout.columnHeaderHeight + "px"
+        @headerViewport.style.height = @layout.header_height + "px"
         @headerViewport.style.overflow = "hidden"
         @headerContainer.appendChild @headerViewport
 
         # body container 
         @bodyContainer = document.createElement "div"
         @bodyContainer.style.position =  "absolute"
-        @bodyContainer.style.top = @layout.columnHeaderHeight + "px";
+        @bodyContainer.style.top = @layout.header_height + "px";
         @bodyContainer.style.bottom = "0px";
         @bodyContainer.style.width = "100%";
 
@@ -188,7 +194,16 @@ class TableView
             me.headerScroll.scrollTo @x,0
             me.repaint -@x,-@y
         @scroll.on "scrollEnd", ->
-            me.repaint -@x,-@y
+            if @y > 0
+                @scrollTo @x, 0
+            if @x > 0
+                @scrollTo 0, @y
+            [i,j] = me.visible -@x,-@y
+            snapped_x = closest -@x, me.col_offset[j], me.col_offset[j+1]
+            snapped_y = closest -@y, i * me.row_height, (i+1)*me.row_height
+            @scrollTo -snapped_x, -snapped_y
+            me.headerScroll.scrollTo -snapped_x, 0
+            me.repaint snapped_x,snapped_y
 
     show_column_header: (j)->
         colEl = @headerPool.pop()
@@ -196,8 +211,8 @@ class TableView
         colEl.innerText = data
         colEl.style.left = @col_offset[j] + "px"
         colEl.style.top = "0"
-        colEl.style.width = @layout.column_width[j] - 1 + "px"
-        colEl.style.height = @layout.columnHeaderHeight + "px"
+        colEl.style.width = @layout.column_widths[j] - 1 + "px"
+        colEl.style.height = @layout.header_height + "px"
         @headerViewport.appendChild colEl
         @columns[j] = colEl
 
@@ -213,7 +228,7 @@ class TableView
         el.innerText = data
         el.style.left = @col_offset[j] + "px"
         el.style.top = @layout.row_height * i + "px"
-        el.style.width = @layout.column_width[j] - 1 + "px"
+        el.style.width = @layout.column_widths[j] - 1 + "px"
         el.style.height = @layout.row_height - 1 + "px"
         @viewport.appendChild el
         @cells[","+ (i + j * @nb_rows) ] = el
@@ -275,23 +290,6 @@ class TableView
         @last_j = j
 
 
-layout =
-    columnHeaderHeight: 100
-    row_height:  20
-    column_width: ( 50 for i in [0...100] )
-
-table_data = new TableData (generate_table 1000,500)
-window.table_view = new TableView "#container", table_data, layout
-
-
-
-
-
-
-
-
-
-
-
-
+window.TableData = TableData
+window.TableView = TableView
 

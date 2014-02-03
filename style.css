@@ -10,34 +10,44 @@ html,
 body {
   min-height: 100%;
   width: auto;
-  -ms-touch-action: none;
   overflow: hidden;
 }
 #container {
-  position: absolute;
-  z-index: 1;
+  background-color: #f0f0f0;
   width: 100%;
+  position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
-  background-color: #f0f0f0;
 }
-#container div {
+.fattable {
   overflow: hidden;
 }
-#container div.viewport > div {
+.fattable-viewport {
+  overflow: hidden;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+}
+.fattable-viewport > div {
+  overflow: hidden;
   padding: 2px;
   position: absolute;
   background-color: white;
   font-size: 12px;
   font-family: sans-serif;
 }
-#container div.viewport {
-  z-index: 1;
+.fattable-body-container {
+  position: absolute;
+  overflow-x: scroll;
+  overflow-y: scroll;
+  bottom: 0px;
   width: 100%;
 }
-#coords {
-  position: fixed;
-  top: 0;
-  left: 0;
+.fattable-header-container {
+  position: absolute;
+  overflow: hidden;
+  top: 0px;
+  width: 100%;
 }

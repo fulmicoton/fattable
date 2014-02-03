@@ -44,7 +44,6 @@ scroll_options =
         right: 39
         down: 40
 
-
 binary_search = (arr, x)->
     if arr[0] > x
         0
@@ -61,7 +60,6 @@ binary_search = (arr, x)->
             else
                 return m
         return a
-
 
 distance = (a1, a2)->
     Math.abs(a2-a1)
@@ -83,6 +81,7 @@ class TableView
             @container = document.querySelector container
         else
             @container = container
+        @container.class_name += " fattable"
         @nb_cols = @data.nb_cols()
         @nb_rows = @data.nb_rows()
         @W = sum @layout.column_widths
@@ -102,8 +101,6 @@ class TableView
         #   [ i_a -> i_b ]  x  [ j_a, j_b ]
         j = binary_search @col_offset, x
         i = (y / @layout.row_height | 0)
-        i = Math.min( (Math.max i, 0), @nb_rows - @nb_rows_visible)
-        j = Math.min( (Math.max j, 0), @nb_cols - @nb_cols_visible)
         [i, j]
 
     setup: ->
@@ -113,17 +110,7 @@ class TableView
         @columns = {}
         @cells = {}
 
-        if @scroll?
-            @scroll.destroy()
-        if @headerScroll
-            @headerScroll.destroy()
-
         @container.innerHtml = ""
-        if @bodyContainer?
-            @bodyContainer.innerHtml = ""
-        if @headerContainer
-            @headerContainer.innerHtml = ""
-
         @w = @container.offsetWidth
         @h = @container.offsetHeight - @layout.header_height
 
@@ -134,31 +121,25 @@ class TableView
 
         # header container
         @headerContainer = document.createElement "div"
-        @headerContainer.style.position =  "absolute"
-        @headerContainer.style.top = "0px";
+        @headerContainer.className += " fattable-header-container";
         @headerContainer.style.height = @layout.header_height + "px";
-        @headerContainer.style.width = "100%";
         @headerContainer.className = "header-container"
         
-        @headerViewport =  document.createElement "div"
-        @headerViewport.className = "viewport"
+        @headerViewport = document.createElement "div"
+        @headerViewport.className = " fattable-viewport"
         @headerViewport.style.width = @W + "px"
         @headerViewport.style.height = @layout.header_height + "px"
-        @headerViewport.style.overflow = "hidden"
         @headerContainer.appendChild @headerViewport
 
         # body container 
         @bodyContainer = document.createElement "div"
-        @bodyContainer.style.position =  "absolute"
+        @bodyContainer.className = "fattable-body-container";
         @bodyContainer.style.top = @layout.header_height + "px";
-        @bodyContainer.style.bottom = "0px";
-        @bodyContainer.style.width = "100%";
-
+        
         @viewport = document.createElement "div"
-        @viewport.className = "viewport"
+        @viewport.className = "fattable-viewport"
         @viewport.style.width = @W + "px"
         @viewport.style.height = @H + "px"
-        @viewport.style.overflow = "hidden"
 
         for c in [0...@nb_cols_visible * @nb_rows_visible]
             @pool.push document.createElement "div"
@@ -175,35 +156,17 @@ class TableView
         @container.appendChild @headerContainer
         @bodyContainer.appendChild @viewport
 
-        @headerScroll = new IScroll @headerContainer,
-            mouseWheel: false
-            scrollbars: false
-            scrollX: true
-            scrollY: false
-            probeType: 0
-            interactiveScrollbars: false
-            momentum: false
-
-        @scroll = new IScroll @bodyContainer, scroll_options
         me = this
-        @scroll.on "scroll", ->
-            if @y > 0
-                @scrollTo @x, 0
-            if @x > 0
-                @scrollTo 0, @y
-            me.headerScroll.scrollTo @x,0
-            me.repaint -@x,-@y
-        @scroll.on "scrollEnd", ->
-            if @y > 0
-                @scrollTo @x, 0
-            if @x > 0
-                @scrollTo 0, @y
-            [i,j] = me.visible -@x,-@y
-            snapped_x = closest(-@x, me.col_offset[j], me.col_offset[j+1]) | 0
-            snapped_y = closest -@y, i * me.row_height, (i+1)*me.row_height
-            @scrollTo -snapped_x, -snapped_y
-            me.headerScroll.scrollTo -snapped_x, 0
-            me.repaint snapped_x,snapped_y
+        @bodyContainer.onscroll = ->
+            x = @scrollLeft
+            y = @scrollTop
+            [i,j] = me.visible x,y
+            me.headerContainer.style.display = "none"
+            me.bodyContainer.style.display = "none"
+            me.headerViewport.style.left = -x + "px";
+            me.repaint i,j
+            me.headerContainer.style.display = ""
+            me.bodyContainer.style.display = ""
 
     show_column_header: (j)->
         colEl = @headerPool.pop()
@@ -233,7 +196,7 @@ class TableView
         @viewport.appendChild el
         @cells[","+ (i + j * @nb_rows) ] = el
 
-    show_patch: (i,j,w=@nb_cols_visible, h=@nb_rows_visible)->
+    show_patch: (i,j,w,h)->
         for row_id in [ i...i+h ] by 1
             for col_id in [ j ...j+w ] by 1
                 @show_cell row_id, col_id
@@ -245,47 +208,45 @@ class TableView
         @pool.push cell
         delete cell[k]
 
-    hide_patch: (i,j,w=@nb_cols_visible, h=@nb_rows_visible)->
+    hide_patch: (i,j,w,h)->
         for row_id in [ i...i+h ] by 1
             for col_id in [ j ...j+w ] by 1
                 @hide_cell row_id, col_id
 
-    repaint: (x,y)->
-        viewport_style = @viewport.style
-        viewport_style.display = "none"
-        [i,j] = @visible x,y
-        if distance(i, @last_i) >= @nb_rows_visible or distance(j, @last_j) >= @nb_cols_visible
-            @hide_patch @last_i, @last_j
-            @show_patch i, j
+    repaint: (i,j)->
+        last_i = @last_i
+        last_j = @last_j
+        if distance(i, last_i) >= @nb_rows_visible or distance(j, last_j) >= @nb_cols_visible
+            @hide_patch last_i, last_j, @nb_cols_visible, @nb_rows_visible
+            @show_patch i, j, @nb_cols_visible, @nb_rows_visible
             for cj in [ 0 ... @nb_cols_visible ] by 1
-                @hide_column_header @last_j + cj
+                @hide_column_header last_j + cj
                 @show_column_header j + cj
         else
-            if i > @last_i
-                nb_rows = i-@last_i
-                @hide_patch @last_i, @last_j, @nb_cols_visible, nb_rows
-                @show_patch (@last_i + @nb_rows_visible), j,  @nb_cols_visible, nb_rows
-                mh = @last_i + @nb_rows_visible - i
+            if i > last_i
+                nb_rows = i - last_i
+                @hide_patch last_i, last_j, @nb_cols_visible, nb_rows
+                @show_patch (last_i + @nb_rows_visible), j,  @nb_cols_visible, nb_rows
+                mh = last_i + @nb_rows_visible - i
                 mi = i
             else
-                nb_rows = @last_i-i
-                @hide_patch (i + @nb_rows_visible), @last_j, @nb_cols_visible, nb_rows
+                nb_rows = last_i-i
+                @hide_patch (i + @nb_rows_visible), last_j, @nb_cols_visible, nb_rows
                 @show_patch i, j, @nb_cols_visible, nb_rows
-                mh = i + @nb_rows_visible - @last_i
-                mi = @last_i
-            if j > @last_j
-                @hide_patch mi, @last_j, (j - @last_j ), mh
-                @show_patch mi, (@last_j + @nb_cols_visible), (j - @last_j), mh
-                for cj in [ @last_j ... j ] by 1
+                mh = i + @nb_rows_visible - last_i
+                mi = last_i
+            if j > last_j
+                @hide_patch mi, last_j, (j - last_j ), mh
+                @show_patch mi, (last_j + @nb_cols_visible), (j - last_j), mh
+                for cj in [ last_j ... j ] by 1
                     @hide_column_header cj
                     @show_column_header cj + @nb_cols_visible
             else
-                @hide_patch mi, (j + @nb_cols_visible), (@last_j - j), mh
-                @show_patch mi, j, (@last_j - j), mh
-                for cj in [ j ... @last_j ] by 1
+                @hide_patch mi, (j + @nb_cols_visible), (last_j - j), mh
+                @show_patch mi, j, (last_j - j), mh
+                for cj in [ j ... last_j ] by 1
                     @hide_column_header cj + @nb_cols_visible
                     @show_column_header cj
-        viewport_style.display = "block"
         @last_i = i
         @last_j = j
 

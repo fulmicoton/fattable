@@ -11,23 +11,32 @@ html {
 html, body {
     min-height: 100%;
     width: auto;
-    -ms-touch-action: none;
     overflow: hidden; 
 }
 
 #container {
     position: absolute;
-    z-index: 1;
+    background-color: #f0f0f0;
     width: 100%;
+    position: absolute;
     top: 0;
     bottom: 0;
     left: 0;
-    background-color: #f0f0f0;
-    
-    div {
+}
+
+
+.fattable {
+    overflow: hidden;
+}
+
+.fattable-viewport {
+    overflow:hidden;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    & > div {
         overflow:hidden;
-    }
-    div.viewport > div {
         padding: 2px;
         position: absolute;
         background-color: white;
@@ -36,24 +45,17 @@ html, body {
     }
 }
 
-#container {
-    div.header-container {
-    }
-}
-
-#container div.viewport {
-    z-index: 1;
+.fattable-body-container {
+    position: absolute;
+    overflow-x:scroll;
+    overflow-y:scroll;
+    bottom: 0px;
     width: 100%;
-    // -webkit-text-size-adjust: none;
-    // -moz-text-size-adjust: none;
-    // -ms-text-size-adjust: none;
-    // -o-text-size-adjust: none;
-    // text-size-adjust: none;
 }
 
-
-#coords {
-    position: fixed;
-    top: 0;
-    left: 0;
+.fattable-header-container  {
+    position: absolute;
+    overflow:hidden;
+    top: 0px;
+    width: 100%;
 }

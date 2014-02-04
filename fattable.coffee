@@ -124,10 +124,18 @@ class TableView
         @viewport.style.width = @W + "px"
         @viewport.style.height = @H + "px"
 
+
         for c in [0...@nb_cols_visible * @nb_rows_visible]
-            @pool.push document.createElement "div"
+            el = document.createElement "div"
+            el.style.height = @layout.row_height - 1 + "px"
+            @viewport.appendChild el
+            @pool.push el
         for c in [0...@nb_cols_visible]
-            @headerPool.push document.createElement "div"
+            el = document.createElement "div"
+            el.style.height = @layout.header_height + "px"
+            @headerPool.push el
+            @headerViewport.appendChild el
+
         for j in [0...@nb_cols_visible]
             @show_column_header j
             for i in [0...@nb_rows_visible]
@@ -156,15 +164,11 @@ class TableView
         data = @data.header j
         colEl.innerText = data
         colEl.style.left = @col_offset[j] + "px"
-        colEl.style.top = "0"
         colEl.style.width = @layout.column_widths[j] - 1 + "px"
-        colEl.style.height = @layout.header_height + "px"
-        @headerViewport.appendChild colEl
         @columns[j] = colEl
 
     hide_column_header: (j)->
         columnHeader = @columns[j]
-        @headerViewport.removeChild columnHeader
         @headerPool.push columnHeader
         delete @columns[j]
 
@@ -175,8 +179,6 @@ class TableView
         el.style.left = @col_offset[j] + "px"
         el.style.top = @layout.row_height * i + "px"
         el.style.width = @layout.column_widths[j] - 1 + "px"
-        el.style.height = @layout.row_height - 1 + "px"
-        @viewport.appendChild el
         @cells[","+ (i + j * @nb_rows) ] = el
 
     show_patch: (i,j,w,h)->
@@ -187,7 +189,7 @@ class TableView
     hide_cell: (i,j)->
         k =  ","  + (i + j * @nb_rows)
         cell = @cells[k]
-        @viewport.removeChild cell
+        #@viewport.removeChild cell
         @pool.push cell
         delete cell[k]
 

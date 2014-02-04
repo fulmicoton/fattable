@@ -18,10 +18,7 @@ html, body {
     position: absolute;
     background-color: #f0f0f0;
     width: 100%;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
+    height: 100%;
 }
 
 
@@ -34,7 +31,8 @@ html, body {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%;
+    bottom: 0;
+    right: 0;
     & > div {
         overflow:hidden;
         padding: 2px;
@@ -43,6 +41,15 @@ html, body {
         font-size: 12px;
         font-family: sans-serif;
     }
+}
+
+.fattable-mask {
+    overflow: hidden;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
 }
 
 .fattable-body-container {
@@ -56,6 +63,5 @@ html, body {
 .fattable-header-container  {
     position: absolute;
     overflow:hidden;
-    top: 0px;
     width: 100%;
 }

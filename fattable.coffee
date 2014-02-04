@@ -27,23 +27,6 @@ class TableData
     nb_rows: ->
         @_nb_rows
 
-scroll_options =
-    mouseWheel: true
-    scrollbars: true 
-    scrollX: true
-    probeType: 3
-    interactiveScrollbars: true
-    deceleration: 0.01
-    keyBindings:
-        pageUp: 33
-        pageDown: 34
-        end: 35
-        home: 36
-        left: 37
-        up: 38
-        right: 39
-        down: 40
-
 binary_search = (arr, x)->
     if arr[0] > x
         0
@@ -81,7 +64,7 @@ class TableView
             @container = document.querySelector container
         else
             @container = container
-        @container.class_name += " fattable"
+        @container.className += " fattable"
         @nb_cols = @data.nb_cols()
         @nb_rows = @data.nb_rows()
         @W = sum @layout.column_widths
@@ -135,7 +118,7 @@ class TableView
         @bodyContainer = document.createElement "div"
         @bodyContainer.className = "fattable-body-container";
         @bodyContainer.style.top = @layout.header_height + "px";
-        
+
         @viewport = document.createElement "div"
         @viewport.className = "fattable-viewport"
         @viewport.style.width = @W + "px"

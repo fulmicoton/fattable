@@ -1,10 +1,3 @@
-
-* {
-    padding: 0;
-    margin: 0;
-    box-sizing: border-box;
-}
-
 html {
     height: 100%;
 }
@@ -15,7 +8,10 @@ html, body {
 }
 
 #container {
+
     position: absolute;
+    left: 0;
+    top: 0;
     background-color: #f0f0f0;
     width: 100%;
     height: 100%;
@@ -24,16 +20,22 @@ html, body {
 
 .fattable {
     overflow: hidden;
+    background-color: black;
+    * {
+        box-sizing: border-box;
+         -moz-box-sizing: border-box;
+    }
 }
 
 .fattable-viewport {
-    overflow:hidden;
+    overflow: hidden;
     position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
     right: 0;
     & > div {
+        // border: solid 1px black;
         overflow:hidden;
         padding: 2px;
         position: absolute;
@@ -41,15 +43,9 @@ html, body {
         font-size: 12px;
         font-family: sans-serif;
     }
-}
-
-.fattable-mask {
-    overflow: hidden;
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    right: 0;
+    div {
+        height: 25px;
+    }
 }
 
 .fattable-body-container {
@@ -58,10 +54,20 @@ html, body {
     overflow-y:scroll;
     bottom: 0px;
     width: 100%;
+    
 }
 
 .fattable-header-container  {
     position: absolute;
-    overflow:hidden;
+    overflow: hidden;
     width: 100%;
+    height: 100px;
+
+    .fattable-viewport {
+        height: 100px;
+        div {
+            height: 100px;
+        }
+    }
+
 }

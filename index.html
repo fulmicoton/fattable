@@ -5,7 +5,7 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-    <!-- <div id="coords"></div> -->
+    <!-- <div id="coords"></div> -->aa
     <div id="container">
     </div>
     <script src="fattable.js"></script>
@@ -13,7 +13,7 @@
 
 
     var nb_cols = 100000;
-    var nb_rows = 1000000;
+    var nb_rows = 100000;
     var column_widths = [];
     for (var i=0; i<nb_cols ; i++) {
         var column_width = (60 + Math.random() * 80 | 0);
@@ -27,7 +27,7 @@
 
     var table_data = new TableData(nb_rows, nb_cols);
     window.table_view = new TableView("#container", table_data, layout);
-
+    
     </script>
 </body>
 </html>

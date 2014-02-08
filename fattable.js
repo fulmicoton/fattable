@@ -112,8 +112,7 @@
 
   TableView = (function() {
     function TableView(container, data, layout) {
-      var onDomReady,
-        _this = this;
+      var _this = this;
 
       this.data = data;
       this.layout = layout;
@@ -129,11 +128,10 @@
       this.row_height = this.layout.row_height;
       this.H = this.layout.row_height * this.nb_rows;
       this.col_offset = cumsum(this.layout.column_widths);
-      onDomReady = function() {
+      document.addEventListener("DOMContentLoaded", function() {
         document.removeEventListener("DOMContentLoaded", arguments.callee);
         return _this.setup();
-      };
-      document.addEventListener("DOMContentLoaded", onDomReady);
+      });
       window.addEventListener("resize", function() {
         return _this.setup();
       });
@@ -159,47 +157,15 @@
       return [i, j];
     };
 
-    TableView.prototype.on_mousedown = function(evt) {
-      if (evt.button === 1) {
-        this.moving = true;
-        this.moving_dX = this.bodyContainer.scrollLeft + evt.x;
-        return this.moving_dY = this.bodyContainer.scrollTop + evt.y;
-      }
-    };
-
-    TableView.prototype.on_mouseup = function(evt) {
-      return this.moving = false;
-    };
-
-    TableView.prototype.on_mousemove = function(evt) {
-      var x, y;
-
-      if (this.moving) {
-        x = this.bodyContainer.scrollLeft;
-        y = this.bodyContainer.scrollTop;
-        this.bodyContainer.scrollLeft = -evt.x + this.moving_dX;
-        return this.bodyContainer.scrollTop = -evt.y + this.moving_dY;
-      }
-    };
-
-    TableView.prototype.on_mouseout = function(evt) {
-      if (evt.toElement === null) {
-        return this.moving = false;
-      }
-    };
-
     TableView.prototype.setup = function() {
-      var c, el, i, j, me, _i, _j, _k, _l, _ref, _ref1, _ref2, _ref3;
+      var c, el, i, j, me, _i, _j, _k, _ref, _ref1, _ref2,
+        _this = this;
 
-      this.pool = [];
-      this.headerPool = [];
       this.columns = {};
       this.cells = {};
       this.container.innerHtml = "";
       this.w = this.container.offsetWidth;
       this.h = this.container.offsetHeight - this.layout.header_height;
-      this.last_i = 0;
-      this.last_j = 0;
       this.nb_cols_visible = this.compute_nb_columns();
       this.nb_rows_visible = (this.h / this.layout.row_height | 0) + 2;
       this.headerContainer = document.createElement("div");
@@ -213,126 +179,72 @@
       this.bodyContainer = document.createElement("div");
       this.bodyContainer.className = "fattable-body-container";
       this.bodyContainer.style.top = this.layout.header_height + "px";
-      this.bodyContainer.addEventListener('mousedown', this.on_mousedown.bind(this));
-      this.bodyContainer.addEventListener('mouseup', this.on_mouseup.bind(this));
-      this.bodyContainer.addEventListener('mousemove', this.on_mousemove.bind(this));
-      this.bodyContainer.addEventListener('mouseout', this.on_mouseout.bind(this));
+      this.bodyContainer.addEventListener('mousedown', function(evt) {
+        if (evt.button === 1) {
+          _this.moving = true;
+          _this.moving_dX = _this.bodyContainer.scrollLeft + evt.x;
+          return _this.moving_dY = _this.bodyContainer.scrollTop + evt.y;
+        }
+      });
+      this.bodyContainer.addEventListener('mouseup', function() {
+        return _this.moving = false;
+      });
+      this.bodyContainer.addEventListener('mousemove', function(evt) {
+        var x, y;
+
+        if (_this.moving) {
+          x = _this.bodyContainer.scrollLeft;
+          y = _this.bodyContainer.scrollTop;
+          _this.bodyContainer.scrollLeft = -evt.x + _this.moving_dX;
+          return _this.bodyContainer.scrollTop = -evt.y + _this.moving_dY;
+        }
+      });
+      this.bodyContainer.addEventListener('mouseout', function(evt) {
+        if (evt.toElement === null) {
+          return _this.moving = false;
+        }
+      });
       this.viewport = document.createElement("div");
       this.viewport.className = "fattable-viewport";
       this.viewport.style.width = this.W + "px";
       this.viewport.style.height = this.H + "px";
-      for (c = _i = 0, _ref = this.nb_cols_visible * this.nb_rows_visible; 0 <= _ref ? _i < _ref : _i > _ref; c = 0 <= _ref ? ++_i : --_i) {
-        el = document.createElement("div");
-        this.viewport.appendChild(el);
-        this.pool.push(el);
-      }
-      for (c = _j = 0, _ref1 = this.nb_cols_visible; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; c = 0 <= _ref1 ? ++_j : --_j) {
-        el = document.createElement("div");
-        this.headerPool.push(el);
-        this.headerViewport.appendChild(el);
-      }
-      for (j = _k = 0, _ref2 = this.nb_cols_visible; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; j = 0 <= _ref2 ? ++_k : --_k) {
-        this.show_column_header(j);
-        for (i = _l = 0, _ref3 = this.nb_rows_visible; 0 <= _ref3 ? _l < _ref3 : _l > _ref3; i = 0 <= _ref3 ? ++_l : --_l) {
-          this.show_cell(i, j);
+      for (j = _i = _ref = -this.nb_cols_visible; _i < 0; j = _i += 1) {
+        for (i = _j = _ref1 = -this.nb_rows_visible; _j < 0; i = _j += 1) {
+          el = document.createElement("div");
+          this.viewport.appendChild(el);
+          this.cells[i + "," + j] = el;
         }
       }
-      this.cur_i = 0;
-      this.cur_j = 0;
+      for (c = _k = _ref2 = -this.nb_cols_visible; _k < 0; c = _k += 1) {
+        el = document.createElement("div");
+        this.columns[c] = el;
+        this.headerViewport.appendChild(el);
+      }
+      this.last_i = -this.nb_rows_visible;
+      this.last_j = -this.nb_cols_visible;
+      this.goTo(0, 0);
       this.container.appendChild(this.bodyContainer);
       this.container.appendChild(this.headerContainer);
       this.bodyContainer.appendChild(this.viewport);
       me = this;
       return this.bodyContainer.onscroll = function() {
-        var x, y, _ref4;
+        var x, y, _ref3;
 
         x = this.scrollLeft;
         y = this.scrollTop;
-        _ref4 = me.visible(x, y), i = _ref4[0], j = _ref4[1];
-        me.headerContainer.style.display = "none";
-        me.bodyContainer.style.display = "none";
-        me.headerViewport.style.left = -x + "px";
-        me.move_x(j);
-        me.move_y(i);
-        me.headerContainer.style.display = "";
-        return me.bodyContainer.style.display = "";
+        _ref3 = me.visible(x, y), i = _ref3[0], j = _ref3[1];
+        me.goTo(i, j);
+        return me.headerViewport.style.left = -x + "px";
       };
     };
 
-    TableView.prototype.show_column_header = function(j) {
-      var colEl, data;
-
-      colEl = this.headerPool.pop();
-      data = this.data.header(j);
-      colEl.textContent = data;
-      colEl.style.left = this.col_offset[j] + "px";
-      colEl.style.width = this.layout.column_widths[j] + "px";
-      return this.columns[j] = colEl;
-    };
-
-    TableView.prototype.hide_column_header = function(j) {
-      var columnHeader;
-
-      columnHeader = this.columns[j];
-      this.headerPool.push(columnHeader);
-      return delete this.columns[j];
-    };
-
-    TableView.prototype.show_cell = function(i, j) {
-      var data, el;
-
-      el = this.pool.pop();
-      data = this.data.get(i, j);
-      el.textContent = data;
-      el.style.left = this.col_offset[j] + "px";
-      el.style.top = this.layout.row_height * i + "px";
-      el.style.width = this.layout.column_widths[j] + "px";
-      return this.cells[i + "," + j] = el;
-    };
-
-    TableView.prototype.show_patch = function(i, j, w, h) {
-      var col_id, row_id, _i, _ref, _results;
-
-      _results = [];
-      for (row_id = _i = i, _ref = i + h; _i < _ref; row_id = _i += 1) {
-        _results.push((function() {
-          var _j, _ref1, _results1;
-
-          _results1 = [];
-          for (col_id = _j = j, _ref1 = j + w; _j < _ref1; col_id = _j += 1) {
-            _results1.push(this.show_cell(row_id, col_id));
-          }
-          return _results1;
-        }).call(this));
-      }
-      return _results;
-    };
-
-    TableView.prototype.hide_cell = function(i, j) {
-      var cell, k;
-
-      k = i + "," + j;
-      cell = this.cells[k];
-      this.pool.push(cell);
-      return delete cell[k];
-    };
-
-    TableView.prototype.hide_patch = function(i, j, w, h) {
-      var col_id, row_id, _i, _ref, _results;
-
-      _results = [];
-      for (row_id = _i = i, _ref = i + h; _i < _ref; row_id = _i += 1) {
-        _results.push((function() {
-          var _j, _ref1, _results1;
-
-          _results1 = [];
-          for (col_id = _j = j, _ref1 = j + w; _j < _ref1; col_id = _j += 1) {
-            _results1.push(this.hide_cell(row_id, col_id));
-          }
-          return _results1;
-        }).call(this));
-      }
-      return _results;
+    TableView.prototype.goTo = function(i, j) {
+      this.headerContainer.style.display = "none";
+      this.bodyContainer.style.display = "none";
+      this.move_x(j);
+      this.move_y(i);
+      this.headerContainer.style.display = "";
+      return this.bodyContainer.style.display = "";
     };
 
     TableView.prototype.move_x = function(j) {
@@ -405,52 +317,6 @@
         }
       }
       return this.last_i = i;
-    };
-
-    TableView.prototype.repaint = function(i, j) {
-      var cj, last_i, last_j, mh, mi, nb_rows, _i, _j, _k, _ref;
-
-      last_i = this.last_i;
-      last_j = this.last_j;
-      if (distance(i, last_i) >= this.nb_rows_visible || distance(j, last_j) >= this.nb_cols_visible) {
-        this.hide_patch(last_i, last_j, this.nb_cols_visible, this.nb_rows_visible);
-        this.show_patch(i, j, this.nb_cols_visible, this.nb_rows_visible);
-        for (cj = _i = 0, _ref = this.nb_cols_visible; _i < _ref; cj = _i += 1) {
-          this.hide_column_header(last_j + cj);
-          this.show_column_header(j + cj);
-        }
-      } else {
-        if (i > last_i) {
-          nb_rows = i - last_i;
-          this.hide_patch(last_i, last_j, this.nb_cols_visible, nb_rows);
-          this.show_patch(last_i + this.nb_rows_visible, j, this.nb_cols_visible, nb_rows);
-          mh = last_i + this.nb_rows_visible - i;
-          mi = i;
-        } else {
-          nb_rows = last_i - i;
-          this.hide_patch(i + this.nb_rows_visible, last_j, this.nb_cols_visible, nb_rows);
-          this.show_patch(i, j, this.nb_cols_visible, nb_rows);
-          mh = i + this.nb_rows_visible - last_i;
-          mi = last_i;
-        }
-        if (j > last_j) {
-          this.hide_patch(mi, last_j, j - last_j, mh);
-          this.show_patch(mi, last_j + this.nb_cols_visible, j - last_j, mh);
-          for (cj = _j = last_j; _j < j; cj = _j += 1) {
-            this.hide_column_header(cj);
-            this.show_column_header(cj + this.nb_cols_visible);
-          }
-        } else {
-          this.hide_patch(mi, j + this.nb_cols_visible, last_j - j, mh);
-          this.show_patch(mi, j, last_j - j, mh);
-          for (cj = _k = j; _k < last_j; cj = _k += 1) {
-            this.hide_column_header(cj + this.nb_cols_visible);
-            this.show_column_header(cj);
-          }
-        }
-      }
-      this.last_i = i;
-      return this.last_j = j;
     };
 
     return TableView;

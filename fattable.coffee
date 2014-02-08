@@ -73,11 +73,10 @@ class TableView
         @col_offset = cumsum @layout.column_widths
         @min_col = Math.min.apply null, @layout.column_widths
         onDomReady = =>
-            document.removeEventListener "DOMContentLoaded", arguments.callee, false
+            document.removeEventListener "DOMContentLoaded", arguments.callee
             @setup()
-        document.addEventListener "DOMContentLoaded", onDomReady, false
-        window.addEventListener "resize", =>
-            @setup()
+        document.addEventListener "DOMContentLoaded", onDomReady
+        window.addEventListener "resize", => @setup()
 
     visible: (x,y)->
         # returns the square
@@ -85,6 +84,21 @@ class TableView
         j = binary_search @col_offset, x
         i = (y / @layout.row_height | 0)
         [i, j]
+
+    on_mousedown: (evt)->
+        if evt.button == 1
+            @moving = true
+            @moving_dX = @bodyContainer.scrollLeft + evt.x
+            @moving_dY = @bodyContainer.scrollTop + evt.y
+    on_mouseup: (evt)->
+        if @moving
+            @moving = false
+    on_mousemove: (evt)->
+        if @moving
+            x = @bodyContainer.scrollLeft
+            y = @bodyContainer.scrollTop
+            @bodyContainer.scrollLeft = -evt.x + @moving_dX
+            @bodyContainer.scrollTop = -evt.y + @moving_dY
 
     setup: ->
         # can be called when resizing the window
@@ -118,6 +132,10 @@ class TableView
         @bodyContainer = document.createElement "div"
         @bodyContainer.className = "fattable-body-container";
         @bodyContainer.style.top = @layout.header_height + "px";
+
+        @bodyContainer.addEventListener 'mousedown', @on_mousedown.bind(this)
+        @bodyContainer.addEventListener 'mouseup', @on_mouseup.bind(this)
+        @bodyContainer.addEventListener 'mousemove', @on_mousemove.bind(this)
 
         @viewport = document.createElement "div"
         @viewport.className = "fattable-viewport"

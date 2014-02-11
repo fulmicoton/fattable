@@ -15,13 +15,26 @@ cumsum = (arr)->
         cs[i+1] = s
     cs
 
+do_nothing = ->
+
 class TableData
     # TODO make it asynchronous
     constructor: (@_nb_rows, @_nb_cols)->
-    get: (i,j)->
-        i + "," + j
-    header: (i)->
-        "col " + i
+
+    has_cell: (i,j)->
+        false
+
+    has_column: (j)->
+        false
+
+    get_cell: (i,j, cb=do_nothing)->
+        deferred = ->
+            cb(i + "," + j)
+        setTimeout deferred, 1000
+
+    get_header: (j,cb=do_nothing)->
+        cb("col " + j)
+
     nb_cols: ->
         @_nb_cols
     nb_rows: ->
@@ -66,9 +79,85 @@ min_width_subarray = (cumsum, l)->
             s = w
     s
 
+
+class LRUCache
+
+    constructor: (fetcher, @size=100)->
+        @data = {}
+        @lru_keys = []
+
+    has: (k)->
+        # Returns true if the key k is 
+        # already in the cache.
+        @data.hasOwnProperty k
+
+    get: (k, cb)->
+        # If key k is in the cache,
+        # calls cb immediatly with  as arguments
+        #    - v, the value associated to k
+        #    - k, the key requested for.loca
+        # if not, cb will be called
+        # asynchronously.
+        if @data.hasOwnProperty(k)
+            cb @data[k], k
+        else
+            fetcher k, (v)=>
+                idx = @lru_keys.indexOf k
+                if idx >= 0
+                    @lru_keys.splice idx, 1
+                @lru_keys.push k
+                if @lru_keys.length >= @size
+                    removeKey = @lru_keys.shift()
+                    delete @data[removeKey]
+                @data[k] = v
+                cb v, k
+
+class PageTableData
+
+    constructor: ->
+
+
+
+class CellPainter
+    # The cell painter tells how 
+    # to fill, and style cells.
+    # Do not set height or width.
+    # in either fill and setup methods.
+
+  
+    setupCell: (cell_div)->
+        # Setup method are called at the creation
+        # of the cells. That is during initialization
+        # and for all window resize event.
+        # 
+        # Cells are recycled.
+
+    setupColumnHeader: (col_div)->
+        # Setup method are called at the creation
+        # of the column header. That is during
+        # initialization and for all window resize
+        # event.
+        #
+        # Columns are recycled.
+
+    fillColumnHeader: (col_div, data)->
+        # Fills and style a column div.
+        col_div.textContent = data
+
+    fillCell: (cell_div, data)->
+        # Fills and style a cell div.
+        cell_div.pending = false
+        cell_div.textContent = data
+
+    fillColumnHeaderPending: (cell_div)->
+        cell_div.textContent = "NA"
+
+    fillCellPending: (cell_div)->
+        cell_div.textContent = "NA"
+
 class TableView
 
-    constructor: (container, @data, @layout)->
+    constructor: (container, @painter, @data, @layout)->
         if typeof container == "string"
             @container = document.querySelector container
         else
@@ -152,11 +241,13 @@ class TableView
         for j in [-@nb_cols_visible...0] by 1
             for i in [-@nb_rows_visible...0] by 1
                 el = document.createElement "div"
+                @painter.setupCell el
                 @viewport.appendChild el
                 @cells[i + "," + j] = el
 
         for c in [-@nb_cols_visible...0] by 1
             el = document.createElement "div"
+            @painter.setupColumnHeader el
             @columns[c] = el
             @headerViewport.appendChild el
 
@@ -166,14 +257,28 @@ class TableView
         @container.appendChild @bodyContainer
         @container.appendChild @headerContainer
         @bodyContainer.appendChild @viewport
+        @bodyContainer.onscroll = =>
+            x = @bodyContainer.scrollLeft
+            y = @bodyContainer.scrollTop
+            [i,j] = @visible x,y
+            @goTo i,j
+            @headerViewport.style.left = -x + "px"
+            clearTimeout @scrollEndTimer    
+            @scrollEndTimer = setTimeout @on_scrollend.bind(this), 200
 
-        me = this
-        @bodyContainer.onscroll = ->
-            x = @scrollLeft
-            y = @scrollTop
-            [i,j] = me.visible x,y
-            me.goTo i,j
-            me.headerViewport.style.left = -x + "px"
+    on_scrollend: ->
+        for j in [@last_j ... @last_j + @nb_cols_visible] by 1
+            columnHeader = @columns[j]
+            do (columnHeader)=>
+                @data.get_header j, (data)=>
+                    @painter.fillColumnHeader columnHeader, data
+            for i in [@last_i ... @last_i + @nb_rows_visible] by 1
+                k = i+ ","+j
+                cell = @cells[k]
+                do (cell)=>
+                    @data.get_cell i,j,(data)=>
+                        @painter.fillCell cell,data
+
 
     goTo: (i,j)->
         @headerContainer.style.display = "none"
@@ -203,21 +308,31 @@ class TableView
             # move the column header
             columnHeader = @columns[orig_j]
             delete @columns[orig_j]
-            columnHeader.textContent = @data.header dest_j
+            if @data.has_column dest_j
+                @data.get_header dest_j, (data)=>
+                    @painter.fillColumnHeader columnHeader, data
+            else if not columnHeader.pending
+                columnHeader.pending = false
+                @painter.fillColumnHeaderPending columnHeader
             columnHeader.style.left = col_x
             columnHeader.style.width = col_width
             @columns[dest_j] = columnHeader
 
             # move the cells.
             for i in [@last_i...@last_i+@nb_rows_visible]
-                data = @data.get i, dest_j
                 k =  i  + "," + orig_j
                 cell = @cells[k]
                 delete @cells[k]
                 @cells[ i + "," + dest_j] = cell
                 cell.style.left = col_x
                 cell.style.width = col_width
-                cell.textContent = data
+                do (cell)=>
+                    if @data.has_cell(i, dest_j)
+                        @data.get_cell i, dest_j, (data)=>
+                            @painter.fillCell cell, data
+                    else if not cell.pending
+                        cell.pending = true
+                        @painter.fillCellPending cell
         @last_j = j
 
     move_y: (i)->
@@ -237,16 +352,32 @@ class TableView
             row_y = dest_i * @layout.row_height + "px"
             # move the cells.
             for j in [@last_j...@last_j+@nb_cols_visible]
-                data = @data.get dest_i, j
                 k =  orig_i  + "," + j
                 cell = @cells[k]
                 delete @cells[k]
                 @cells[ dest_i + "," + j] = cell
                 cell.style.top = row_y
-                cell.textContent = data
+                do (cell)=>
+                    if @data.has_cell dest_i, j
+                        @data.get_cell dest_i, j, (data)=>
+                            @cell.pending = false
+                            @painter.fillCell cell, data
+                    else if not cell.pending
+                        cell.pending = true
+                        @painter.fillCellPending cell
         @last_i = i
 
+    update_cell_contents: ->
+        for j in [@last_j ... @last_j + @nb_cols_visible] by 1
+            for i in [@last_i ... @last_i + @nb_rows_visible] by 1
+                k =  i  + "," + j
+                cell = @cell[k]
+                if cell.pending
+                    @data.get_cell i,j,(data)=>
+                        @painter.fillCell cell,data
+                        cell.pending = false
 
 window.TableData = TableData
 window.TableView = TableView
+window.CellPainter = CellPainter
 

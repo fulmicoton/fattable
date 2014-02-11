@@ -16,7 +16,7 @@
     var nb_rows = 100000;
     var column_widths = [];
     for (var i=0; i<nb_cols ; i++) {
-        var column_width = (60 + Math.random() * 80 | 0);
+        var column_width = (100 + Math.random() * 80 | 0);
         column_widths.push(column_width);
     }
     var layout = {
@@ -25,8 +25,9 @@
         "column_widths": column_widths
     }
 
-    var table_data = new TableData(nb_rows, nb_cols);
-    window.table_view = new TableView("#container", table_data, layout);
+    var cellPainter = new CellPainter();
+    var tableData = new TableData(nb_rows, nb_cols);
+    window.table_view = new TableView("#container", cellPainter, tableData, layout);
     
     </script>
 </body>

@@ -8,22 +8,20 @@ cumsum = (arr)->
         cs[i+1] = s
     cs
 
-do_nothing = ->
-
 class TableData
 
     hasCell: (i,j)->
-        true
+        false
 
     hasColumn: (j)->
-        true
+        false
 
-    getCell: (i,j, cb=do_nothing)->
-        #deferred = ->
-        cb(i + "," + j)
-        #setTimeout deferred, 100
+    getCell: (i,j, cb=(->))->
+        deferred = ->
+            cb(i + "," + j)
+        setTimeout deferred, 100
 
-    getHeader: (j,cb=do_nothing)->
+    getHeader: (j,cb=(->))->
         cb("col " + j)
 
 binary_search = (arr, x)->
@@ -94,7 +92,6 @@ class PageTableData
     constructor: ->
 
 
-
 class CellPainter
 
     # The cell painter tells how 
@@ -102,14 +99,14 @@ class CellPainter
     # Do not set height or width.
     # in either fill and setup methods.
 
-    setupCell: (cell_div)->
+    setupCell: (cellDiv)->
         # Setup method are called at the creation
         # of the cells. That is during initialization
         # and for all window resize event.
         # 
         # Cells are recycled.
 
-    setupColumnHeader: (col_div)->
+    setupColumnHeader: (colHeaderDiv)->
         # Setup method are called at the creation
         # of the column header. That is during
         # initialization and for all window resize
@@ -117,25 +114,25 @@ class CellPainter
         #
         # Columns are recycled.
 
-    fillColumnHeader: (col_div, data)->
+    fillColumnHeader: (colHeaderDiv, data)->
         # Fills and style a column div.
-        col_div.textContent = data
+        colHeaderDiv.textContent = data
 
-    fillCell: (cell_div, data)->
+    fillCell: (cellDiv, data)->
         # Fills and style a cell div.
-        cell_div.textContent = data
+        cellDiv.textContent = data
 
-    fillColumnHeaderPending: (cell_div)->
+    fillColumnHeaderPending: (cellDiv)->
         # Mark a column header as pending.
         # Its content is not in cache
         # and needs to be fetched
-        cell_div.textContent = "NA"
+        cellDiv.textContent = "NA"
 
-    fillCellPending: (cell_div)->
+    fillCellPending: (cellDiv)->
         # Mark a cell content as pending
         # Its content is not in cache and 
         # needs to be fetched
-        cell_div.textContent = "NA"
+        cellDiv.textContent = "NA"
 
 
 smallest_diff_subsequence = (arr, w)->
@@ -153,6 +150,83 @@ smallest_diff_subsequence = (arr, w)->
             l += 1
     return l
 
+
+
+
+class ScrollBarProxy
+
+    constructor: (@container, @W, @H)->
+        @verticalScrollbar = document.createElement "div"
+        @verticalScrollbar.className += " fattable-v-scrollbar"
+        @horizontalScrollbar = document.createElement "div"
+        @horizontalScrollbar.className += " fattable-h-scrollbar"
+        @container.appendChild @verticalScrollbar
+        @container.appendChild @horizontalScrollbar
+
+        bigContentHorizontal = document.createElement "div"
+        bigContentHorizontal.style.height = 1 + "px";
+        bigContentHorizontal.style.width = @W + "px";
+        bigContentVertical = document.createElement "div"
+        bigContentVertical.style.width = 1 + "px";
+        bigContentVertical.style.height = @H + "px";
+
+        @horizontalScrollbar.appendChild bigContentHorizontal
+        @verticalScrollbar.appendChild bigContentVertical
+
+        @scrollLeft = 0
+        @scrollTop  = 0
+        @horizontalScrollbar.onscroll = =>
+            @scrollLeft = @horizontalScrollbar.scrollLeft
+            @onScrollXY @scrollLeft,@scrollTop
+        @verticalScrollbar.onscroll = =>
+            @scrollTop = @verticalScrollbar.scrollTop
+            @onScrollXY @scrollLeft,@scrollTop
+
+        # setting up middle click drag
+        @container.addEventListener 'mousedown', (evt)=>
+            if evt.button == 1
+                @moving = true
+                @moving_dX = @scrollLeft + evt.clientX
+                @moving_dY = @scrollTop + evt.clientY
+        @container.addEventListener 'mouseup', =>
+            @moving = false
+        @container.addEventListener 'mousemove', (evt)=>
+            if @moving
+                newX = -evt.clientX + @moving_dX
+                newY = -evt.clientY + @moving_dY
+                @setScrollXY newX, newY
+        @container.addEventListener 'mouseout', (evt)=>
+            if @moving
+                if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @container)
+                    @moving = false
+
+        onMouseWheel = (evt)=>
+            # TODO support other browsers
+            if evt.type is "mousewheel"
+                @setScrollXY @scrollLeft, @scrollTop - evt.wheelDelta
+
+        if @container.addEventListener
+            @container.addEventListener "mousewheel", onMouseWheel, false
+            @container.addEventListener "DOMMouseScroll", onMouseWheel, false
+        else @container.attachEvent "onmousewheel", onMouseWheel
+    
+    onScrollXY: (x,y)->
+
+    setScrollXY: (x,y)->
+        x = Math.max(x,0)
+        x = Math.min(x,@W)
+        y = Math.max(y,0)
+        y = Math.min(y,@H)
+        onScrollXY = @onScrollXY
+        @onScrollXY = ->
+        @scrollLeft = x
+        @scrollTop = y
+        @horizontalScrollbar.scrollLeft = x
+        @verticalScrollbar.scrollTop = y
+        @onScrollXY x,y
+        @onScrollXY = onScrollXY
+
+
 class TableView
 
     readRequiredParameter: (parameters, k, type)->
@@ -161,9 +235,6 @@ class TableView
         this[k] = parameters[k]
 
     constructor: (parameters)->
-        #
-        # container, @painter, @data, @layout
-        #
         container = parameters.container
 
         if not container?
@@ -227,32 +298,16 @@ class TableView
         @bodyContainer.className = "fattable-body-container";
         @bodyContainer.style.top = @headerHeight + "px";
 
-        # setting up middle click drag
-        @bodyContainer.addEventListener 'mousedown', (evt)=>
-            if evt.button == 1
-                @moving = true
-                @moving_dX = @bodyContainer.scrollLeft + evt.x
-                @moving_dY = @bodyContainer.scrollTop + evt.y
-        @bodyContainer.addEventListener 'mouseup', => @moving = false
-        @bodyContainer.addEventListener 'mousemove', (evt)=>
-            if @moving
-                x = @bodyContainer.scrollLeft
-                y = @bodyContainer.scrollTop
-                @bodyContainer.scrollLeft = -evt.x + @moving_dX
-                @bodyContainer.scrollTop = -evt.y + @moving_dY
-        @bodyContainer.addEventListener 'mouseout', (evt)=>
-            if (evt.toElement == null)
-                @moving = false
-        @viewport = document.createElement "div"
-        @viewport.className = "fattable-viewport"
-        @viewport.style.width = @W + "px"
-        @viewport.style.height = @H + "px"
+        @bodyViewport = document.createElement "div"
+        @bodyViewport.className = "fattable-viewport"
+        @bodyViewport.style.width = @W + "px"
+        @bodyViewport.style.height = @H + "px"
 
         for j in [-@nbColsVisible...0] by 1
             for i in [-@nb_rows_visible...0] by 1
                 el = document.createElement "div"
                 @painter.setupCell el
-                @viewport.appendChild el
+                @bodyViewport.appendChild el
                 @cells[i + "," + j] = el
 
         for c in [-@nbColsVisible...0] by 1
@@ -266,40 +321,40 @@ class TableView
         @goTo 0,0
         @container.appendChild @bodyContainer
         @container.appendChild @headerContainer
-        @bodyContainer.appendChild @viewport
-        @bodyContainer.onscroll = =>
-            x = @bodyContainer.scrollLeft
-            y = @bodyContainer.scrollTop
+        @bodyContainer.appendChild @bodyViewport
+        @refreshAllContent()
+        @scrollBarProxy = new ScrollBarProxy @bodyContainer, @W, @H
+        @scrollBarProxy.onScrollXY = (x,y)=>
             [i,j] = @visible x,y
             @goTo i,j
             @headerViewport.style.left = -x + "px"
+            @bodyViewport.style.left = -x + "px";
+            @bodyViewport.style.top = -y + "px";
             clearTimeout @scrollEndTimer    
-            @scrollEndTimer = setTimeout @on_scrollend.bind(this), 200
-        @on_scrollend()
+            @scrollEndTimer = setTimeout @refreshAllContent.bind(this), 200
 
-    on_scrollend: ->
-        # for j in [@lastVisibleRow ... @lastVisibleRow + @nbColsVisible] by 1
-        #     columnHeader = @columns[j]
-        #     do (columnHeader)=>
-        #         @data.getHeader j, (data)=>
-        #             @painter.fillColumnHeader columnHeader, data
-        #     for i in [@firstVisibleRow ... @firstVisibleRow + @nb_rows_visible] by 1
-        #         k = i+ ","+j
-        #         cell = @cells[k]
-        #         do (cell)=>
-        #             @data.getCell i,j,(data)=>
-        #                 @painter.fillCell cell,data
-
+    refreshAllContent: ->
+        for j in [@lastVisibleRow ... @lastVisibleRow + @nbColsVisible] by 1
+            columnHeader = @columns[j]
+            do (columnHeader)=>
+                @data.getHeader j, (data)=>
+                    @painter.fillColumnHeader columnHeader, data
+            for i in [@firstVisibleRow ... @firstVisibleRow + @nb_rows_visible] by 1
+                k = i+ ","+j
+                cell = @cells[k]
+                do (cell)=>
+                    @data.getCell i,j,(data)=>
+                        @painter.fillCell cell,data
 
     goTo: (i,j)->
         @headerContainer.style.display = "none"
         @bodyContainer.style.display = "none"
-        @move_x j
-        @move_y i
+        @moveX j
+        @moveY i
         @headerContainer.style.display = ""
         @bodyContainer.style.display = ""
 
-    move_x: (j)->
+    moveX: (j)->
         last_i = @firstVisibleRow
         last_j = @lastVisibleRow
         shift_j = j - last_j
@@ -346,7 +401,7 @@ class TableView
                         @painter.fillCellPending cell
         @lastVisibleRow = j
 
-    move_y: (i)->
+    moveY: (i)->
         last_i = @firstVisibleRow
         last_j = @lastVisibleRow
         shift_i = i - last_i
@@ -381,17 +436,6 @@ class TableView
                         @painter.fillCellPending cell
         @firstVisibleRow = i
 
-    update_cell_contents: ->
-        for j in [@lastVisibleRow ... @lastVisibleRow + @nbColsVisible] by 1
-            for i in [@firstVisibleRow ... @firstVisibleRow + @nb_rows_visible] by 1
-                k =  i  + "," + j
-                cell = @cell[k]
-                if cell.pending
-                    @data.getCell i,j,(data)=>
-                        @painter.fillCell cell,data
-                        cell.pending = false
-
 window.TableData = TableData
 window.TableView = TableView
 window.CellPainter = CellPainter
-

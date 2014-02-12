@@ -1,11 +1,4 @@
 
-
-sum = (arr)->
-    s = 0
-    for x in arr
-        s += x
-    s
-
 cumsum = (arr)->
     cs = arr[...]
     cs[0] = 0.0
@@ -18,29 +11,23 @@ cumsum = (arr)->
 do_nothing = ->
 
 class TableData
-    # TODO make it asynchronous
-    constructor: (@_nb_rows, @_nb_cols)->
 
-    has_cell: (i,j)->
-        false
+    hasCell: (i,j)->
+        true
 
-    has_column: (j)->
-        false
+    hasColumn: (j)->
+        true
 
-    get_cell: (i,j, cb=do_nothing)->
-        deferred = ->
-            cb(i + "," + j)
-        setTimeout deferred, 1000
+    getCell: (i,j, cb=do_nothing)->
+        #deferred = ->
+        cb(i + "," + j)
+        #setTimeout deferred, 100
 
-    get_header: (j,cb=do_nothing)->
+    getHeader: (j,cb=do_nothing)->
         cb("col " + j)
 
-    nb_cols: ->
-        @_nb_cols
-    nb_rows: ->
-        @_nb_rows
-
 binary_search = (arr, x)->
+
     if arr[0] > x
         0
     else
@@ -69,16 +56,6 @@ closest = (x, vals...)->
             d = d_
             res = x_
     res
-
-
-min_width_subarray = (cumsum, l)->
-    s = Infinity
-    for i in [0...cumsum.length - 1 - l]
-        w = cumsum[i+l] - cumsum[i]
-        if w < s
-            s = w
-    s
-
 
 class LRUCache
 
@@ -119,12 +96,12 @@ class PageTableData
 
 
 class CellPainter
+
     # The cell painter tells how 
     # to fill, and style cells.
     # Do not set height or width.
     # in either fill and setup methods.
 
-  
     setupCell: (cell_div)->
         # Setup method are called at the creation
         # of the cells. That is during initialization
@@ -146,47 +123,81 @@ class CellPainter
 
     fillCell: (cell_div, data)->
         # Fills and style a cell div.
-        cell_div.pending = false
         cell_div.textContent = data
 
     fillColumnHeaderPending: (cell_div)->
+        # Mark a column header as pending.
+        # Its content is not in cache
+        # and needs to be fetched
         cell_div.textContent = "NA"
 
     fillCellPending: (cell_div)->
+        # Mark a cell content as pending
+        # Its content is not in cache and 
+        # needs to be fetched
         cell_div.textContent = "NA"
+
+
+smallest_diff_subsequence = (arr, w)->
+    # Given an array of positive increasing integers arr
+    # and an integer W, return the smallest integer l
+    # such that arr_{x+l} - arr_{x} is always greater than w.
+    # 
+    # If no such l exists, just return arr.length
+    l = 1
+    start = 0
+    while start + l < arr.length
+        if arr[start+l] - arr[start] > w
+            start += 1
+        else
+            l += 1
+    return l
 
 class TableView
 
-    constructor: (container, @painter, @data, @layout)->
+    readRequiredParameter: (parameters, k, type)->
+        if not parameters[k]?
+            throw "Expected parameter <"+k +">"
+        this[k] = parameters[k]
+
+    constructor: (parameters)->
+        #
+        # container, @painter, @data, @layout
+        #
+        container = parameters.container
+
+        if not container?
+            throw "container not specified."
         if typeof container == "string"
             @container = document.querySelector container
-        else
+        else if typeof container == "object"
             @container = container
+        else
+            throw "container must be a string or a dom element."
+
+        @readRequiredParameter parameters, "painter"
+        @readRequiredParameter parameters, "data"
+        @readRequiredParameter parameters, "nbRows"
+        @readRequiredParameter parameters, "rowHeight"
+        @readRequiredParameter parameters, "columnWidths"
+        @readRequiredParameter parameters, "rowHeight"
+        @readRequiredParameter parameters, "headerHeight"
+        @nbCols = @columnWidths.length
+              
         @container.className += " fattable"
-        @nb_cols = @data.nb_cols()
-        @nb_rows = @data.nb_rows()
-        @W = sum @layout.column_widths
-        @row_height  = @layout.row_height
-        @H = @layout.row_height * @nb_rows
-        @col_offset = cumsum @layout.column_widths
+        @H = @rowHeight * @nbRows
+        @col_offset = cumsum @columnWidths
+        @W = @col_offset[@col_offset.length-1]
         document.addEventListener "DOMContentLoaded", =>
             document.removeEventListener "DOMContentLoaded", arguments.callee
             @setup()
         window.addEventListener "resize", => @setup()
 
-
-    compute_nb_columns: ->
-        M = Math.min.apply null, @layout.column_widths
-        for l in [M ... 1]
-            w = min_width_subarray @col_offset, l
-            if w < @w
-                return l + 1
-
     visible: (x,y)->
         # returns the square
         #   [ i_a -> i_b ]  x  [ j_a, j_b ]
         j = binary_search @col_offset, x
-        i = (y / @layout.row_height | 0)
+        i = (y / @rowHeight | 0)
         [i, j]
 
     setup: ->
@@ -196,26 +207,25 @@ class TableView
 
         @container.innerHtml = ""
         @w = @container.offsetWidth
-        @h = @container.offsetHeight - @layout.header_height
-
-        @nb_cols_visible = @compute_nb_columns()
-        @nb_rows_visible = (@h / @layout.row_height | 0) + 2
+        @h = @container.offsetHeight - @headerHeight
+        @nbColsVisible = smallest_diff_subsequence(@col_offset, @w) + 2
+        @nb_rows_visible = (@h / @rowHeight | 0) + 2
 
         # header container
         @headerContainer = document.createElement "div"
         @headerContainer.className += " fattable-header-container";
-        @headerContainer.style.height = @layout.header_height + "px";
+        @headerContainer.style.height = @headerHeight + "px";
         
         @headerViewport = document.createElement "div"
         @headerViewport.className = "fattable-viewport"
         @headerViewport.style.width = @W + "px"
-        @headerViewport.style.height = @layout.header_height + "px"
+        @headerViewport.style.height = @headerHeight + "px"
         @headerContainer.appendChild @headerViewport
 
         # body container 
         @bodyContainer = document.createElement "div"
         @bodyContainer.className = "fattable-body-container";
-        @bodyContainer.style.top = @layout.header_height + "px";
+        @bodyContainer.style.top = @headerHeight + "px";
 
         # setting up middle click drag
         @bodyContainer.addEventListener 'mousedown', (evt)=>
@@ -238,21 +248,21 @@ class TableView
         @viewport.style.width = @W + "px"
         @viewport.style.height = @H + "px"
 
-        for j in [-@nb_cols_visible...0] by 1
+        for j in [-@nbColsVisible...0] by 1
             for i in [-@nb_rows_visible...0] by 1
                 el = document.createElement "div"
                 @painter.setupCell el
                 @viewport.appendChild el
                 @cells[i + "," + j] = el
 
-        for c in [-@nb_cols_visible...0] by 1
+        for c in [-@nbColsVisible...0] by 1
             el = document.createElement "div"
             @painter.setupColumnHeader el
             @columns[c] = el
             @headerViewport.appendChild el
 
-        @last_i = -@nb_rows_visible
-        @last_j = -@nb_cols_visible
+        @firstVisibleRow = -@nb_rows_visible
+        @lastVisibleRow = -@nbColsVisible
         @goTo 0,0
         @container.appendChild @bodyContainer
         @container.appendChild @headerContainer
@@ -265,19 +275,20 @@ class TableView
             @headerViewport.style.left = -x + "px"
             clearTimeout @scrollEndTimer    
             @scrollEndTimer = setTimeout @on_scrollend.bind(this), 200
+        @on_scrollend()
 
     on_scrollend: ->
-        for j in [@last_j ... @last_j + @nb_cols_visible] by 1
-            columnHeader = @columns[j]
-            do (columnHeader)=>
-                @data.get_header j, (data)=>
-                    @painter.fillColumnHeader columnHeader, data
-            for i in [@last_i ... @last_i + @nb_rows_visible] by 1
-                k = i+ ","+j
-                cell = @cells[k]
-                do (cell)=>
-                    @data.get_cell i,j,(data)=>
-                        @painter.fillCell cell,data
+        # for j in [@lastVisibleRow ... @lastVisibleRow + @nbColsVisible] by 1
+        #     columnHeader = @columns[j]
+        #     do (columnHeader)=>
+        #         @data.getHeader j, (data)=>
+        #             @painter.fillColumnHeader columnHeader, data
+        #     for i in [@firstVisibleRow ... @firstVisibleRow + @nb_rows_visible] by 1
+        #         k = i+ ","+j
+        #         cell = @cells[k]
+        #         do (cell)=>
+        #             @data.getCell i,j,(data)=>
+        #                 @painter.fillCell cell,data
 
 
     goTo: (i,j)->
@@ -289,27 +300,27 @@ class TableView
         @bodyContainer.style.display = ""
 
     move_x: (j)->
-        last_i = @last_i
-        last_j = @last_j
+        last_i = @firstVisibleRow
+        last_j = @lastVisibleRow
         shift_j = j - last_j
         if shift_j == 0
             return
-        dj = Math.min( Math.abs(shift_j), @nb_cols_visible)
+        dj = Math.min( Math.abs(shift_j), @nbColsVisible)
         for offset_j in [0 ... dj ] by 1
             if shift_j>0
-                orig_j = @last_j + offset_j
-                dest_j = j + offset_j + @nb_cols_visible - dj
+                orig_j = @lastVisibleRow + offset_j
+                dest_j = j + offset_j + @nbColsVisible - dj
             else
-                orig_j = @last_j + @nb_cols_visible - dj + offset_j
+                orig_j = @lastVisibleRow + @nbColsVisible - dj + offset_j
                 dest_j = j + offset_j 
             col_x = @col_offset[dest_j] + "px"
-            col_width = @layout.column_widths[dest_j] + "px"
+            col_width = @columnWidths[dest_j] + "px"
 
             # move the column header
             columnHeader = @columns[orig_j]
             delete @columns[orig_j]
-            if @data.has_column dest_j
-                @data.get_header dest_j, (data)=>
+            if @data.hasColumn dest_j
+                @data.getHeader dest_j, (data)=>
                     @painter.fillColumnHeader columnHeader, data
             else if not columnHeader.pending
                 columnHeader.pending = false
@@ -319,7 +330,7 @@ class TableView
             @columns[dest_j] = columnHeader
 
             # move the cells.
-            for i in [@last_i...@last_i+@nb_rows_visible]
+            for i in [ last_i...last_i+@nb_rows_visible]
                 k =  i  + "," + orig_j
                 cell = @cells[k]
                 delete @cells[k]
@@ -327,53 +338,56 @@ class TableView
                 cell.style.left = col_x
                 cell.style.width = col_width
                 do (cell)=>
-                    if @data.has_cell(i, dest_j)
-                        @data.get_cell i, dest_j, (data)=>
+                    if @data.hasCell(i, dest_j)
+                        @data.getCell i, dest_j, (data)=>
                             @painter.fillCell cell, data
                     else if not cell.pending
                         cell.pending = true
                         @painter.fillCellPending cell
-        @last_j = j
+        @lastVisibleRow = j
 
     move_y: (i)->
-        last_i = @last_i
-        last_j = @last_j
+        last_i = @firstVisibleRow
+        last_j = @lastVisibleRow
         shift_i = i - last_i
         if shift_i == 0
             return
         di = Math.min( Math.abs(shift_i), @nb_rows_visible)
         for offset_i in [0 ... di ] by 1
             if shift_i>0
-                orig_i = @last_i + offset_i
+                orig_i = last_i + offset_i
                 dest_i = i + offset_i + @nb_rows_visible - di
             else
-                orig_i = @last_i + @nb_rows_visible - di + offset_i
+                orig_i = last_i + @nb_rows_visible - di + offset_i
                 dest_i = i + offset_i
-            row_y = dest_i * @layout.row_height + "px"
+            row_y = dest_i * @rowHeight + "px"
             # move the cells.
-            for j in [@last_j...@last_j+@nb_cols_visible]
+            for j in [last_j...last_j+@nbColsVisible]
                 k =  orig_i  + "," + j
                 cell = @cells[k]
                 delete @cells[k]
                 @cells[ dest_i + "," + j] = cell
                 cell.style.top = row_y
+                @data.getCell dest_i, j, (data)=>
+                    cell.pending = false
+                    @painter.fillCell cell, data
                 do (cell)=>
-                    if @data.has_cell dest_i, j
-                        @data.get_cell dest_i, j, (data)=>
-                            @cell.pending = false
+                    if @data.hasCell dest_i, j
+                        @data.getCell dest_i, j, (data)=>
+                            cell.pending = false
                             @painter.fillCell cell, data
                     else if not cell.pending
                         cell.pending = true
                         @painter.fillCellPending cell
-        @last_i = i
+        @firstVisibleRow = i
 
     update_cell_contents: ->
-        for j in [@last_j ... @last_j + @nb_cols_visible] by 1
-            for i in [@last_i ... @last_i + @nb_rows_visible] by 1
+        for j in [@lastVisibleRow ... @lastVisibleRow + @nbColsVisible] by 1
+            for i in [@firstVisibleRow ... @firstVisibleRow + @nb_rows_visible] by 1
                 k =  i  + "," + j
                 cell = @cell[k]
                 if cell.pending
-                    @data.get_cell i,j,(data)=>
+                    @data.getCell i,j,(data)=>
                         @painter.fillCell cell,data
                         cell.pending = false
 

@@ -12,22 +12,24 @@
     <script>
 
 
-    var nb_cols = 100000;
-    var nb_rows = 100000;
-    var column_widths = [];
-    for (var i=0; i<nb_cols ; i++) {
-        var column_width = (100 + Math.random() * 80 | 0);
-        column_widths.push(column_width);
-    }
-    var layout = {
-        "header_height": 100,   
-        "row_height":  25,
-        "column_widths": column_widths
-    }
+    var nbCols = 100000;
+    var columnWidths = [];
+    for (var i=0; i<nbCols ; i++) {
+        var columnWidth = (100 + Math.random() * 80 | 0);
+        columnWidths.push(columnWidth);
+    };
 
-    var cellPainter = new CellPainter();
-    var tableData = new TableData(nb_rows, nb_cols);
-    window.table_view = new TableView("#container", cellPainter, tableData, layout);
+
+
+    window.table_view = new TableView({
+        "container": "#container",
+        "painter": new CellPainter(),
+        "data": new TableData(),
+        "nbRows": 100000,
+        "headerHeight": 100,   
+        "rowHeight":  25,
+        "columnWidths": columnWidths
+    });
     
     </script>
 </body>

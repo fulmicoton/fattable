@@ -404,6 +404,9 @@ class TableView
                         @painter.fillCellPending cell
         @firstVisibleRow = i
 
-window.TableData = TableData
-window.TableView = TableView
-window.CellPainter = CellPainter
+window.fattable = (params)->
+    new TableView params
+
+window.fattable.TableData = TableData
+window.fattable.TableView = TableView
+window.fattable.CellPainter = CellPainter

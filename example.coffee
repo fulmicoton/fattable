@@ -37,7 +37,7 @@ makePage = (@pageName, @I, @J)->
         @pageName + ":" + (i - @I) + "," + (j - @J)
     
 
-class AsyncTableData extends window.TableData
+class AsyncTableData extends fattable.TableData
 
     constructor: ->
         @pageCache = new LRUCache()

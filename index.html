@@ -5,12 +5,15 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-    <!-- <div id="coords"></div> -->aa
+
+
+
+
     <div id="container">
     </div>
     <script src="fattable.js"></script>
+    <script src="example.js"></script>
     <script>
-
 
     var nbCols = 100000;
     var columnWidths = [];
@@ -19,18 +22,15 @@
         columnWidths.push(columnWidth);
     };
 
-
-
-    window.table_view = new TableView({
+    window.tableView = new TableView({
         "container": "#container",
-        "painter": new CellPainter(),
-        "data": new TableData(),
+        "data": new AsyncTableData(),
         "nbRows": 100000,
         "headerHeight": 100,   
         "rowHeight":  25,
         "columnWidths": columnWidths
     });
-    
+
     </script>
 </body>
 </html>

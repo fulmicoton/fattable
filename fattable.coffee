@@ -55,42 +55,6 @@ closest = (x, vals...)->
             res = x_
     res
 
-class LRUCache
-
-    constructor: (fetcher, @size=100)->
-        @data = {}
-        @lru_keys = []
-
-    has: (k)->
-        # Returns true if the key k is 
-        # already in the cache.
-        @data.hasOwnProperty k
-
-    get: (k, cb)->
-        # If key k is in the cache,
-        # calls cb immediatly with  as arguments
-        #    - v, the value associated to k
-        #    - k, the key requested for.loca
-        # if not, cb will be called
-        # asynchronously.
-        if @data.hasOwnProperty(k)
-            cb @data[k], k
-        else
-            fetcher k, (v)=>
-                idx = @lru_keys.indexOf k
-                if idx >= 0
-                    @lru_keys.splice idx, 1
-                @lru_keys.push k
-                if @lru_keys.length >= @size
-                    removeKey = @lru_keys.shift()
-                    delete @data[removeKey]
-                @data[k] = v
-                cb v, k
-
-class PageTableData
-
-    constructor: ->
-
 
 class CellPainter
 
@@ -229,10 +193,14 @@ class ScrollBarProxy
 
 class TableView
 
-    readRequiredParameter: (parameters, k, type)->
+    readRequiredParameter: (parameters, k, default_value)->
         if not parameters[k]?
-            throw "Expected parameter <"+k +">"
-        this[k] = parameters[k]
+            if default_value == undefined
+                throw "Expected parameter <" + k + ">"
+            else
+                this[k] = default_value
+        else
+            this[k] = parameters[k]
 
     constructor: (parameters)->
         container = parameters.container
@@ -244,9 +212,9 @@ class TableView
         else if typeof container == "object"
             @container = container
         else
-            throw "container must be a string or a dom element."
+            throw "Container must be a string or a dom element."
 
-        @readRequiredParameter parameters, "painter"
+        @readRequiredParameter parameters, "painter", new CellPainter()
         @readRequiredParameter parameters, "data"
         @readRequiredParameter parameters, "nbRows"
         @readRequiredParameter parameters, "rowHeight"
@@ -330,7 +298,7 @@ class TableView
             @headerViewport.style.left = -x + "px"
             @bodyViewport.style.left = -x + "px";
             @bodyViewport.style.top = -y + "px";
-            clearTimeout @scrollEndTimer    
+            clearTimeout @scrollEndTimer 
             @scrollEndTimer = setTimeout @refreshAllContent.bind(this), 200
 
     refreshAllContent: ->
@@ -344,6 +312,7 @@ class TableView
                 cell = @cells[k]
                 do (cell)=>
                     @data.getCell i,j,(data)=>
+                        cell.pending = false
                         @painter.fillCell cell,data
 
     goTo: (i,j)->
@@ -376,9 +345,10 @@ class TableView
             delete @columns[orig_j]
             if @data.hasColumn dest_j
                 @data.getHeader dest_j, (data)=>
+                    columnHeader.pending = false
                     @painter.fillColumnHeader columnHeader, data
             else if not columnHeader.pending
-                columnHeader.pending = false
+                columnHeader.pending = true
                 @painter.fillColumnHeaderPending columnHeader
             columnHeader.style.left = col_x
             columnHeader.style.width = col_width
@@ -395,6 +365,7 @@ class TableView
                 do (cell)=>
                     if @data.hasCell(i, dest_j)
                         @data.getCell i, dest_j, (data)=>
+                            cell.pending = false
                             @painter.fillCell cell, data
                     else if not cell.pending
                         cell.pending = true
@@ -423,9 +394,6 @@ class TableView
                 delete @cells[k]
                 @cells[ dest_i + "," + j] = cell
                 cell.style.top = row_y
-                @data.getCell dest_i, j, (data)=>
-                    cell.pending = false
-                    @painter.fillCell cell, data
                 do (cell)=>
                     if @data.hasCell dest_i, j
                         @data.getCell dest_i, j, (data)=>

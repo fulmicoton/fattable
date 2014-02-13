@@ -1,20 +1,49 @@
 
 cumsum = (arr)->
-    cs = arr[...]
-    cs[0] = 0.0
+    cs = [ 0.0 ]
     s = 0.0
-    for i in [0...arr.length - 1] by 1
-        s += arr[i]
-        cs[i+1] = s
+    for x in arr
+        s += x
+        cs.push s
     cs
+
+isReady = false
+isReadyCallbacks = []
+
+document.addEventListener "DOMContentLoaded", =>
+    document.removeEventListener "DOMContentLoaded", arguments.callee
+
+
+class Promise
+
+    constructor: ->
+        @callbacks = []
+        @result = false
+        @resolved = false
+
+    then: (cb)->
+        if @resolved
+            cb @result
+        else
+            @callbacks.push cb
+
+    resolve: (result)->
+        @resolved = true
+        @result = result
+        for cb in @callbacks
+            cb result
+
+domReadyPromise = new Promise()
+
+document.addEventListener "DOMContentLoaded", ->
+    document.removeEventListener "DOMContentLoaded", arguments.callee
+    domReadyPromise.resolve()
 
 class TableData
 
-    hasCell: (i,j)->
-        false
+    hasCell: (i,j)-> false
 
-    hasColumn: (j)->
-        false
+    hasColumn: (j)-> false
 
     getCell: (i,j, cb=(->))->
         deferred = ->
@@ -23,6 +52,113 @@ class TableData
 
     getHeader: (j,cb=(->))->
         cb("col " + j)
+
+class SyncTableData extends TableData
+    # Extends this class if you 
+    # don't need to access your data in a asynchronous 
+    # fashion (e.g. via ajax).
+    # 
+    # You only need to override
+    # getHeaderSync and getCellSync
+    
+    getCellSync: (i,j)->
+        # Override me !
+        i + "," + j
+    getHeaderSync: (j)->
+        # Override me !
+        "col " + j
+    
+    hasCell: (i,j)-> true
+
+    hasColumn: (j)-> true
+
+    getCell: (i,j, cb=(->))->
+        cb ("cell" + i + "," + j)
+
+    getHeader: (j,cb=(->))->
+        cb ("col " + j)
+
+
+
+class LRUCache
+
+    constructor: (@size=100)->
+        @data = {}
+        @lru_keys = []
+
+    has: (k)->
+        # Returns true if the key k is 
+        # already in the cache.
+        @data.hasOwnProperty k
+
+    get: (k)->
+        # If key k is in the cache,
+        # calls cb immediatly with  as arguments
+        #    - v, the value associated to k
+        #    - k, the key requested for.loca
+        # if not, cb will be called
+        # asynchronously.
+        #if @data.hasOwnProperty(k)
+        @data[k]
+    
+    set: (k,v)->
+        idx = @lru_keys.indexOf k
+        if idx >= 0
+            @lru_keys.splice idx, 1
+        @lru_keys.push k
+        if @lru_keys.length >= @size
+            removeKey = @lru_keys.shift()
+            delete @data[removeKey]
+        @data[k] = v
+
+
+
+class PagedAsyncTableData extends TableData
+    # Extend this class if you have access
+    # to your data in a page fashion 
+    # and you want to use a LRU cache
+    constructor: (cacheSize=100)->
+        @pageCache = new LRUCache cacheSize
+        @fetchCallbacks = {}
+
+    cellPageName: (i,j)->
+        # Override me
+        # Should return a string identifying your page.
+        
+
+    hasCell: (i,j)->
+        pageName = @cellPageName i,j
+        @pageCache.has pageName
+
+    getCell: (i,j, cb=(->))->
+        pageName = @cellPageName i,j
+        if @pageCache.has pageName
+            cb @pageCache.get(pageName)(i,j)
+        else if @fetchCallbacks[pageName]?
+            @fetchCallbacks[pageName].push [i, j, cb ]
+        else
+            @fetchCallbacks[pageName] = [ [i, j, cb ] ]
+            @fetchCellPage pageName, (page)=>
+                for [i,j,cb] in @fetchCallbacks[pageName]
+                    cb page(i,j)
+                delete @fetchCallbacks[pageName]
+                @pageCache.set pageName, page
+
+    fetchCellPage: (pageName, cb)->
+        # override this
+        # a page is a function that 
+        # returns the cell value for any (i,j)
+        [I,J] = JSON.parse pageName
+        page = (i,j)->
+            pageName + ":" + (i - I) + "," + (j - J)
+        window.setTimeout (-> cb page), 500 
+
+    hasColumn: (j)->
+        true
+    
+    getHeader: (j,cb=(->))->
+        cb("col " + j)
+
 
 binary_search = (arr, x)->
 
@@ -163,7 +299,16 @@ class ScrollBarProxy
             if @moving
                 if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @container)
                     @moving = false
+        if @W > @horizontalScrollbar.clientWidth
+            @maxScrollHorizontal = @W - @horizontalScrollbar.clientWidth
+        else
+            @maxScrollHorizontal = 0
 
+        if @H > @verticalScrollbar.clientHeight
+            @maxScrollVertical = @H - @verticalScrollbar.clientHeight
+        else
+            @maxScrollVertical = 0
+        
         onMouseWheel = (evt)=>
             # TODO support other browsers
             if evt.type is "mousewheel"
@@ -178,9 +323,9 @@ class ScrollBarProxy
 
     setScrollXY: (x,y)->
         x = Math.max(x,0)
-        x = Math.min(x,@W)
+        x = Math.min(x,@maxScrollHorizontal)
         y = Math.max(y,0)
-        y = Math.min(y,@H)
+        y = Math.min(y,@maxScrollVertical)
         onScrollXY = @onScrollXY
         @onScrollXY = ->
         @scrollLeft = x
@@ -222,21 +367,22 @@ class TableView
         @readRequiredParameter parameters, "rowHeight"
         @readRequiredParameter parameters, "headerHeight"
         @nbCols = @columnWidths.length
-              
         @container.className += " fattable"
         @H = @rowHeight * @nbRows
-        @col_offset = cumsum @columnWidths
-        @W = @col_offset[@col_offset.length-1]
-        document.addEventListener "DOMContentLoaded", =>
-            document.removeEventListener "DOMContentLoaded", arguments.callee
-            @setup()
+        @columnOffset = cumsum @columnWidths
+        @W = @columnOffset[@columnOffset.length-1]
+        domReadyPromise.then => @setup()
         window.addEventListener "resize", => @setup()
 
     visible: (x,y)->
         # returns the square
         #   [ i_a -> i_b ]  x  [ j_a, j_b ]
-        j = binary_search @col_offset, x
+        j = binary_search @columnOffset, x
         i = (y / @rowHeight | 0)
+        i = Math.max(0, i)
+        i = Math.min(i, @nbRows - @nbRowsVisible)
+        j = Math.max(0, j)
+        j = Math.min(j, @nbCols - @nbColsVisible)
         [i, j]
 
     setup: ->
@@ -244,11 +390,11 @@ class TableView
         @columns = {}
         @cells = {}
 
-        @container.innerHtml = ""
+        @container.innerHTML = ""
         @w = @container.offsetWidth
         @h = @container.offsetHeight - @headerHeight
-        @nbColsVisible = smallest_diff_subsequence(@col_offset, @w) + 2
-        @nb_rows_visible = (@h / @rowHeight | 0) + 2
+        @nbColsVisible = Math.min( smallest_diff_subsequence(@columnOffset, @w) + 2, @columnWidths.length)
+        @nbRowsVisible = (@h / @rowHeight | 0) + 2
 
         # header container
         @headerContainer = document.createElement "div"
@@ -271,21 +417,21 @@ class TableView
         @bodyViewport.style.width = @W + "px"
         @bodyViewport.style.height = @H + "px"
 
-        for j in [-@nbColsVisible...0] by 1
-            for i in [-@nb_rows_visible...0] by 1
+
+        for j in [@nbColsVisible ... @nbColsVisible*2] by 1
+            for i in [@nbRowsVisible...@nbRowsVisible*2] by 1
                 el = document.createElement "div"
                 @painter.setupCell el
                 @bodyViewport.appendChild el
                 @cells[i + "," + j] = el
 
-        for c in [-@nbColsVisible...0] by 1
+        for c in [@nbColsVisible...@nbColsVisible*2] by 1
             el = document.createElement "div"
             @painter.setupColumnHeader el
             @columns[c] = el
             @headerViewport.appendChild el
-
-        @firstVisibleRow = -@nb_rows_visible
-        @lastVisibleRow = -@nbColsVisible
+        @firstVisibleRow = @nbRowsVisible
+        @firstVisibleColumn = @nbColsVisible
         @goTo 0,0
         @container.appendChild @bodyContainer
         @container.appendChild @headerContainer
@@ -302,12 +448,12 @@ class TableView
             @scrollEndTimer = setTimeout @refreshAllContent.bind(this), 200
 
     refreshAllContent: ->
-        for j in [@lastVisibleRow ... @lastVisibleRow + @nbColsVisible] by 1
+        for j in [@firstVisibleColumn ... @firstVisibleColumn + @nbColsVisible] by 1
             columnHeader = @columns[j]
             do (columnHeader)=>
                 @data.getHeader j, (data)=>
                     @painter.fillColumnHeader columnHeader, data
-            for i in [@firstVisibleRow ... @firstVisibleRow + @nb_rows_visible] by 1
+            for i in [@firstVisibleRow ... @firstVisibleRow + @nbRowsVisible] by 1
                 k = i+ ","+j
                 cell = @cells[k]
                 do (cell)=>
@@ -325,19 +471,22 @@ class TableView
 
     moveX: (j)->
         last_i = @firstVisibleRow
-        last_j = @lastVisibleRow
+        last_j = @firstVisibleColumn
         shift_j = j - last_j
         if shift_j == 0
             return
         dj = Math.min( Math.abs(shift_j), @nbColsVisible)
+
         for offset_j in [0 ... dj ] by 1
             if shift_j>0
-                orig_j = @lastVisibleRow + offset_j
+                orig_j = @firstVisibleColumn + offset_j
                 dest_j = j + offset_j + @nbColsVisible - dj
             else
-                orig_j = @lastVisibleRow + @nbColsVisible - dj + offset_j
+                orig_j = @firstVisibleColumn + @nbColsVisible - dj + offset_j
                 dest_j = j + offset_j 
-            col_x = @col_offset[dest_j] + "px"
+                if dest_j >= @nbColsVisible
+                    break
+            col_x = @columnOffset[dest_j] + "px"
             col_width = @columnWidths[dest_j] + "px"
 
             # move the column header
@@ -355,7 +504,7 @@ class TableView
             @columns[dest_j] = columnHeader
 
             # move the cells.
-            for i in [ last_i...last_i+@nb_rows_visible]
+            for i in [ last_i...last_i+@nbRowsVisible] by 1
                 k =  i  + "," + orig_j
                 cell = @cells[k]
                 delete @cells[k]
@@ -370,25 +519,25 @@ class TableView
                     else if not cell.pending
                         cell.pending = true
                         @painter.fillCellPending cell
-        @lastVisibleRow = j
+        @firstVisibleColumn = j
 
     moveY: (i)->
         last_i = @firstVisibleRow
-        last_j = @lastVisibleRow
+        last_j = @firstVisibleColumn
         shift_i = i - last_i
         if shift_i == 0
             return
-        di = Math.min( Math.abs(shift_i), @nb_rows_visible)
+        di = Math.min( Math.abs(shift_i), @nbRowsVisible)
         for offset_i in [0 ... di ] by 1
             if shift_i>0
                 orig_i = last_i + offset_i
-                dest_i = i + offset_i + @nb_rows_visible - di
+                dest_i = i + offset_i + @nbRowsVisible - di
             else
-                orig_i = last_i + @nb_rows_visible - di + offset_i
+                orig_i = last_i + @nbRowsVisible - di + offset_i
                 dest_i = i + offset_i
             row_y = dest_i * @rowHeight + "px"
             # move the cells.
-            for j in [last_j...last_j+@nbColsVisible]
+            for j in [last_j...last_j+@nbColsVisible] by 1
                 k =  orig_i  + "," + j
                 cell = @cells[k]
                 delete @cells[k]
@@ -410,3 +559,5 @@ window.fattable = (params)->
 window.fattable.TableData = TableData
 window.fattable.TableView = TableView
 window.fattable.CellPainter = CellPainter
+window.fattable.PagedAsyncTableData = PagedAsyncTableData
+window.fattable.SyncTableData = SyncTableData

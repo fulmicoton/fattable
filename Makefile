@@ -12,4 +12,4 @@ closure/compiler.jar:
 	lessc $^ > $@
 
 fattable.min.js: fattable.js closure/compiler.jar
-	java -jar closure/compiler.jar --js fattable.js --js_output_file fattable.min.js
+	java -jar closure/compiler.jar --js fattable.js --js_output_file fattable.min.js --compilation_level ADVANCED_OPTIMIZATIONS

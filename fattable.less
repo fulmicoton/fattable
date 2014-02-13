@@ -17,7 +17,9 @@ html, body {
 }
 
 
-@fattable-scrollbar-width: 20px;
+/* TODO add an offset back... but beware, as it hads 
+    some padding in the scrolling */
+@fattable-scrollbar-width: 0px;
 
 .fattable-h-scrollbar {
     padding: 0;
@@ -45,7 +47,7 @@ html, body {
 
 .fattable {
     overflow: hidden;
-    background-color: black;
+    background-color: white;
     * {
         box-sizing: border-box;
          -moz-box-sizing: border-box;

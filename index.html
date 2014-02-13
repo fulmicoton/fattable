@@ -12,7 +12,6 @@
     <div id="container">
     </div>
     <script src="fattable.js"></script>
-    <script src="example.js"></script>
     <script>
 
     var nbCols = 100000;
@@ -22,9 +21,26 @@
         columnWidths.push(columnWidth);
     };
 
+    var myData = new fattable.PagedAsyncTableData();
+    myData.cellPageName = function(i,j) {
+        return JSON.stringify([i - (i & 255),j - (j & 255)]);
+    }
+    myData.fetchCellPage = function(pageName, cb) {
+        var deferred = function() {
+            var coords = JSON.parse(pageName);
+            var I = coords[0];
+            var J = coords[1];
+            var page = function(i,j) {
+                return pageName + ":" + (i - I) + "," + (j - J);    
+            }
+            cb(page);
+        }
+        window.setTimeout(deferred, 500);
+    }
+    
     fattable({
         "container": "#container",
-        "data": new AsyncTableData(),
+        "data": myData,
         "nbRows": 100000,
         "headerHeight": 100,   
         "rowHeight":  25,

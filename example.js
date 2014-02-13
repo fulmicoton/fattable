@@ -115,7 +115,7 @@
 
     return AsyncTableData;
 
-  })(window.TableData);
+  })(fattable.TableData);
 
   window.AsyncTableData = AsyncTableData;
 

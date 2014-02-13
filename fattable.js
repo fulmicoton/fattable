@@ -481,10 +481,14 @@
 
   })();
 
-  window.TableData = TableData;
+  window.fattable = function(params) {
+    return new TableView(params);
+  };
 
-  window.TableView = TableView;
+  window.fattable.TableData = TableData;
 
-  window.CellPainter = CellPainter;
+  window.fattable.TableView = TableView;
+
+  window.fattable.CellPainter = CellPainter;
 
 }).call(this);

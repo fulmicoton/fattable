@@ -479,6 +479,10 @@
       var i, j;
       j = binary_search(this.columnOffset, x);
       i = y / this.rowHeight | 0;
+      i = Math.max(0, i);
+      i = Math.min(i, this.nbRows - this.nbRowsVisible);
+      j = Math.max(0, j);
+      j = Math.min(j, this.nbCols - this.nbColsVisible);
       return [i, j];
     };
 
@@ -599,6 +603,9 @@
         } else {
           orig_j = this.firstVisibleColumn + this.nbColsVisible - dj + offset_j;
           dest_j = j + offset_j;
+          if (dest_j >= this.nbColsVisible) {
+            break;
+          }
         }
         col_x = this.columnOffset[dest_j] + "px";
         col_width = this.columnWidths[dest_j] + "px";

@@ -29,10 +29,8 @@ class LRUCache
             delete @data[removeKey]
         @data[k] = v
 
-CELL_PAGE_SIZE = 100
-COL_PAGE_SIZE = 1000
-
-
+CELL_PAGE_SIZE = 256 - 1
+COL_PAGE_SIZE = 1024 - 1
 
 makePage = (@pageName, @I, @J)->
     (i,j)->
@@ -45,23 +43,23 @@ class AsyncTableData extends window.TableData
         @pageCache = new LRUCache()
         @fetchCallbacks = {}
 
-    cellPageName: (i,j)->
-        "cell" + ((i / CELL_PAGE_SIZE) | 0) + "," + ((j / CELL_PAGE_SIZE) | 0)
+    cellPageKey: (i,j)->
+        [ i - (i & CELL_PAGE_SIZE), j - (j & CELL_PAGE_SIZE) ]
 
     hasCell: (i,j)->
-        pageName = @cellPageName i,j
+        pageName = @cellPageKey(i,j).join(",")
         @pageCache.has pageName
 
     getCell: (i,j, cb=(->))->
-        pageName = @cellPageName i,j
+        [I,J] =  @cellPageKey i,j
+        pageName = [I,J].join ","
         if @pageCache.has pageName
             cb @pageCache.get(pageName)(i,j)
         else if @fetchCallbacks[pageName]?
             @fetchCallbacks[pageName].push [i, j, cb ]
         else
             @fetchCallbacks[pageName] = [ [i, j, cb ] ]
-            @fetchCellPage pageName, (i / CELL_PAGE_SIZE | 0)*CELL_PAGE_SIZE, (j / CELL_PAGE_SIZE | 0 )*CELL_PAGE_SIZE
-
+            @fetchCellPage pageName, I, J
     fetchCellPage: (pageName, I, J)->
         deferred = =>
             page = makePage pageName, I, J

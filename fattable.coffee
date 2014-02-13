@@ -484,8 +484,6 @@ class TableView
             else
                 orig_j = @firstVisibleColumn + @nbColsVisible - dj + offset_j
                 dest_j = j + offset_j 
-                if dest_j >= @nbColsVisible
-                    break
             col_x = @columnOffset[dest_j] + "px"
             col_width = @columnWidths[dest_j] + "px"
 

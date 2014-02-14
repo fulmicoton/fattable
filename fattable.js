@@ -375,15 +375,14 @@
       this.container.addEventListener('mousedown', function(evt) {
         if (evt.button === 1) {
           _this.dragging = true;
-          _this.formerClass = _this.container.className;
-          _this.container.className += " fattable-moving";
+          _this.container.className = "fattable-body-container fattable-moving";
           _this.dragging_dX = _this.scrollLeft + evt.clientX;
           return _this.dragging_dY = _this.scrollTop + evt.clientY;
         }
       });
       this.container.addEventListener('mouseup', function() {
         _this.dragging = false;
-        return _this.container.className = _this.formerClass;
+        return _this.container.className = "fattable-body-container";
       });
       this.container.addEventListener('mousemove', function(evt) {
         var newX, newY;
@@ -396,7 +395,7 @@
       this.container.addEventListener('mouseout', function(evt) {
         if (_this.dragging) {
           if ((evt.toElement === null) || (evt.toElement.parentElement.parentElement !== _this.container)) {
-            _this.container.className = _this.formerClass;
+            _this.container.className = "fattable-body-container";
             return _this.dragging = false;
           }
         }

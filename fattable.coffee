@@ -14,6 +14,9 @@ document.addEventListener "DOMContentLoaded", =>
     document.removeEventListener "DOMContentLoaded", arguments.callee
 
 
+bound = (x, m, M)->
+    if (x < m) then m else if (x > M) then M else x
+
 class Promise
 
     constructor: ->
@@ -324,10 +327,8 @@ class ScrollBarProxy
     onScrollXY: (x,y)->
 
     setScrollXY: (x,y)->
-        x = Math.max(x,0)
-        x = Math.min(x,@maxScrollHorizontal)
-        y = Math.max(y,0)
-        y = Math.min(y,@maxScrollVertical)
+        x = bound(x, 0, @maxScrollHorizontal)
+        y = bound(y, 0, @maxScrollVertical)
         @scrollLeft = x
         @scrollTop = y
         @horizontalScrollbar.scrollLeft = x
@@ -375,12 +376,8 @@ class TableView
     visible: (x,y)->
         # returns the square
         #   [ i_a -> i_b ]  x  [ j_a, j_b ]
-        j = binary_search @columnOffset, x
-        i = (y / @rowHeight | 0)
-        i = Math.max(0, i)
-        i = Math.min(i, @nbRows - @nbRowsVisible)
-        j = Math.max(0, j)
-        j = Math.min(j, @nbCols - @nbColsVisible)
+        i = bound (y / @rowHeight | 0), 0, (@nbRows - @nbRowsVisible)
+        j = bound binary_search(@columnOffset, x), 0, (@nbCols - @nbColsVisible)
         [i, j]
 
     setup: ->
@@ -449,15 +446,17 @@ class TableView
         for j in [@firstVisibleColumn ... @firstVisibleColumn + @nbColsVisible] by 1
             columnHeader = @columns[j]
             do (columnHeader)=>
-                @data.getHeader j, (data)=>
-                    @painter.fillColumnHeader columnHeader, data
+                if columnHeader.pending
+                    @data.getHeader j, (data)=>
+                        @painter.fillColumnHeader columnHeader, data
             for i in [@firstVisibleRow ... @firstVisibleRow + @nbRowsVisible] by 1
                 k = i+ ","+j
                 cell = @cells[k]
-                do (cell)=>
-                    @data.getCell i,j,(data)=>
-                        cell.pending = false
-                        @painter.fillCell cell,data
+                if cell.pending
+                    do (cell)=>
+                        @data.getCell i,j,(data)=>
+                            cell.pending = false
+                            @painter.fillCell cell,data
 
     goTo: (i,j)->
         @headerContainer.style.display = "none"
@@ -549,11 +548,19 @@ class TableView
                         @painter.fillCellPending cell
         @firstVisibleRow = i
 
-window.fattable = (params)->
+
+fattable = (params)->
     new TableView params
 
-window.fattable.TableData = TableData
-window.fattable.TableView = TableView
-window.fattable.CellPainter = CellPainter
-window.fattable.PagedAsyncTableData = PagedAsyncTableData
-window.fattable.SyncTableData = SyncTableData
+ns =
+    TableData: TableData
+    TableView: TableView
+    CellPainter: CellPainter
+    PagedAsyncTableData: PagedAsyncTableData
+    SyncTableData: SyncTableData
+    bound: bound
+
+for k,v of ns
+    fattable[k] = v
+
+window.fattable = fattable

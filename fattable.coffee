@@ -320,7 +320,7 @@ class ScrollBarProxy
         onMouseWheel = (evt)=>
             # TODO support other browsers
             if evt.type is "mousewheel"
-                @setScrollXY @scrollLeft, @scrollTop - evt.wheelDelta
+                @setScrollXY @scrollLeft - evt.wheelDeltaX, @scrollTop - evt.wheelDeltaY
 
         if @container.addEventListener
             @container.addEventListener "mousewheel", onMouseWheel, false

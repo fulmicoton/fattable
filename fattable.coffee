@@ -291,10 +291,13 @@ class ScrollBarProxy
         @container.addEventListener 'mousedown', (evt)=>
             if evt.button == 1
                 @dragging = true
+                @formerClass = @container.className
+                @container.className += " fattable-moving"
                 @dragging_dX = @scrollLeft + evt.clientX
                 @dragging_dY = @scrollTop + evt.clientY
         @container.addEventListener 'mouseup', =>
             @dragging = false
+            @container.className = @formerClass
         @container.addEventListener 'mousemove', (evt)=>
             if @dragging
                 newX = -evt.clientX + @dragging_dX
@@ -303,6 +306,7 @@ class ScrollBarProxy
         @container.addEventListener 'mouseout', (evt)=>
             if @dragging
                 if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @container)
+                    @container.className = @formerClass
                     @dragging = false
         if @W > @horizontalScrollbar.clientWidth
             @maxScrollHorizontal = @W - @horizontalScrollbar.clientWidth
@@ -417,11 +421,15 @@ class TableView
             for i in [@nbRowsVisible...@nbRowsVisible*2] by 1
                 el = document.createElement "div"
                 @painter.setupCell el
+                el.pending = false
+                el.style.height = @rowHeight + "px"
                 @bodyViewport.appendChild el
                 @cells[i + "," + j] = el
 
         for c in [@nbColsVisible...@nbColsVisible*2] by 1
             el = document.createElement "div"
+            el.style.height = @headerHeight + "px"
+            el.pending = false
             @painter.setupColumnHeader el
             @columns[c] = el
             @headerViewport.appendChild el
@@ -448,6 +456,7 @@ class TableView
             do (columnHeader)=>
                 if columnHeader.pending
                     @data.getHeader j, (data)=>
+                        columnHeader.pending = false
                         @painter.fillColumnHeader columnHeader, data
             for i in [@firstVisibleRow ... @firstVisibleRow + @nbRowsVisible] by 1
                 k = i+ ","+j

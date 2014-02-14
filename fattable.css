@@ -47,6 +47,9 @@ body {
   box-sizing: border-box;
   -moz-box-sizing: border-box;
 }
+.fattable-moving {
+  cursor: move !important;
+}
 .fattable-viewport {
   overflow: hidden;
   position: absolute;
@@ -62,9 +65,8 @@ body {
   background-color: white;
   font-size: 12px;
   font-family: sans-serif;
-}
-.fattable-viewport div {
-  height: 25px;
+  overflow: hidden !important;
+  text-overflow: ellipsis;
 }
 .fattable-body-container {
   position: absolute;
@@ -82,8 +84,8 @@ body {
   height: 100px;
 }
 .fattable-header-container .fattable-viewport {
-  height: 100px;
+  height: 100%;
 }
-.fattable-header-container .fattable-viewport div {
-  height: 100px;
+.fattable-header-container .fattable-viewport > div {
+  height: 100%;
 }

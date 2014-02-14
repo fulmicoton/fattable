@@ -276,29 +276,31 @@ class ScrollBarProxy
         @scrollLeft = 0
         @scrollTop  = 0
         @horizontalScrollbar.onscroll = =>
-            @scrollLeft = @horizontalScrollbar.scrollLeft
-            @onScrollXY @scrollLeft,@scrollTop
+            if not @dragging
+                @scrollLeft = @horizontalScrollbar.scrollLeft
+                @onScrollXY @scrollLeft,@scrollTop
         @verticalScrollbar.onscroll = =>
-            @scrollTop = @verticalScrollbar.scrollTop
-            @onScrollXY @scrollLeft,@scrollTop
+            if not @dragging
+                @scrollTop = @verticalScrollbar.scrollTop
+                @onScrollXY @scrollLeft,@scrollTop
 
         # setting up middle click drag
         @container.addEventListener 'mousedown', (evt)=>
             if evt.button == 1
-                @moving = true
-                @moving_dX = @scrollLeft + evt.clientX
-                @moving_dY = @scrollTop + evt.clientY
+                @dragging = true
+                @dragging_dX = @scrollLeft + evt.clientX
+                @dragging_dY = @scrollTop + evt.clientY
         @container.addEventListener 'mouseup', =>
-            @moving = false
+            @dragging = false
         @container.addEventListener 'mousemove', (evt)=>
-            if @moving
-                newX = -evt.clientX + @moving_dX
-                newY = -evt.clientY + @moving_dY
+            if @dragging
+                newX = -evt.clientX + @dragging_dX
+                newY = -evt.clientY + @dragging_dY
                 @setScrollXY newX, newY
         @container.addEventListener 'mouseout', (evt)=>
-            if @moving
+            if @dragging
                 if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @container)
-                    @moving = false
+                    @dragging = false
         if @W > @horizontalScrollbar.clientWidth
             @maxScrollHorizontal = @W - @horizontalScrollbar.clientWidth
         else
@@ -326,15 +328,11 @@ class ScrollBarProxy
         x = Math.min(x,@maxScrollHorizontal)
         y = Math.max(y,0)
         y = Math.min(y,@maxScrollVertical)
-        onScrollXY = @onScrollXY
-        @onScrollXY = ->
         @scrollLeft = x
         @scrollTop = y
         @horizontalScrollbar.scrollLeft = x
         @verticalScrollbar.scrollTop = y
         @onScrollXY x,y
-        @onScrollXY = onScrollXY
-
 
 class TableView
 

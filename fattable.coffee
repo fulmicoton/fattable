@@ -291,13 +291,12 @@ class ScrollBarProxy
         @container.addEventListener 'mousedown', (evt)=>
             if evt.button == 1
                 @dragging = true
-                @formerClass = @container.className
-                @container.className += " fattable-moving"
+                @container.className = "fattable-body-container fattable-moving"
                 @dragging_dX = @scrollLeft + evt.clientX
                 @dragging_dY = @scrollTop + evt.clientY
         @container.addEventListener 'mouseup', =>
             @dragging = false
-            @container.className = @formerClass
+            @container.className = "fattable-body-container"
         @container.addEventListener 'mousemove', (evt)=>
             if @dragging
                 newX = -evt.clientX + @dragging_dX
@@ -306,7 +305,7 @@ class ScrollBarProxy
         @container.addEventListener 'mouseout', (evt)=>
             if @dragging
                 if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @container)
-                    @container.className = @formerClass
+                    @container.className = "fattable-body-container"
                     @dragging = false
         if @W > @horizontalScrollbar.clientWidth
             @maxScrollHorizontal = @W - @horizontalScrollbar.clientWidth

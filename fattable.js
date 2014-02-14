@@ -412,7 +412,7 @@
       }
       onMouseWheel = function(evt) {
         if (evt.type === "mousewheel") {
-          return _this.setScrollXY(_this.scrollLeft, _this.scrollTop - evt.wheelDelta);
+          return _this.setScrollXY(_this.scrollLeft - evt.wheelDeltaX, _this.scrollTop - evt.wheelDeltaY);
         }
       };
       if (this.container.addEventListener) {

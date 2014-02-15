@@ -281,11 +281,11 @@ class ScrollBarProxy
         @horizontalScrollbar.onscroll = =>
             if not @dragging
                 @scrollLeft = @horizontalScrollbar.scrollLeft
-                @onScrollXY @scrollLeft,@scrollTop
+                @onScroll @scrollLeft,@scrollTop
         @verticalScrollbar.onscroll = =>
             if not @dragging
                 @scrollTop = @verticalScrollbar.scrollTop
-                @onScrollXY @scrollLeft,@scrollTop
+                @onScroll @scrollLeft,@scrollTop
 
         # setting up middle click drag
         @container.addEventListener 'mousedown', (evt)=>
@@ -327,7 +327,7 @@ class ScrollBarProxy
             @container.addEventListener "DOMMouseScroll", onMouseWheel, false
         else @container.attachEvent "onmousewheel", onMouseWheel
     
-    onScrollXY: (x,y)->
+    onScroll: (x,y)->
 
     setScrollXY: (x,y)->
         x = bound(x, 0, @maxScrollHorizontal)
@@ -336,7 +336,7 @@ class ScrollBarProxy
         @scrollTop = y
         @horizontalScrollbar.scrollLeft = x
         @verticalScrollbar.scrollTop = y
-        @onScrollXY x,y
+        @onScroll x,y
 
 class TableView
 
@@ -440,7 +440,7 @@ class TableView
         @bodyContainer.appendChild @bodyViewport
         @refreshAllContent()
         @scrollBarProxy = new ScrollBarProxy @bodyContainer, @W, @H
-        @scrollBarProxy.onScrollXY = (x,y)=>
+        @scrollBarProxy.onScroll = (x,y)=>
             [i,j] = @visible x,y
             @goTo i,j
             @headerViewport.style.left = -x + "px"
@@ -448,6 +448,7 @@ class TableView
             @bodyViewport.style.top = -y + "px";
             clearTimeout @scrollEndTimer 
             @scrollEndTimer = setTimeout @refreshAllContent.bind(this), 200
+            @onScroll x,y
 
     refreshAllContent: ->
         for j in [@firstVisibleColumn ... @firstVisibleColumn + @nbColsVisible] by 1
@@ -465,6 +466,9 @@ class TableView
                         @data.getCell i,j,(data)=>
                             cell.pending = false
                             @painter.fillCell cell,data
+
+    onScroll: (x,y)->
+
 
     goTo: (i,j)->
         @headerContainer.style.display = "none"

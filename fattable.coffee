@@ -311,10 +311,14 @@ class ScrollBarProxy
             @dragging = false
             @container.className = "fattable-body-container"
         @container.addEventListener 'mousemove', (evt)=>
-            if @dragging
-                newX = -evt.clientX + @dragging_dX
-                newY = -evt.clientY + @dragging_dY
-                @setScrollXY newX, newY
+            # Firefox pb see https://bugzilla.mozilla.org/show_bug.cgi?id=732621
+            deferred = =>
+                if @dragging
+                    newX = -evt.clientX + @dragging_dX
+                    newY = -evt.clientY + @dragging_dY
+                    @setScrollXY newX, newY
+            window.setTimeout deferred, 0
+            
         @container.addEventListener 'mouseout', (evt)=>
             if @dragging
                 if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @container)
@@ -389,7 +393,7 @@ class TableView
         @columns = {}
         @cells = {}
         domReadyPromise.then => @setup()       
-    
+
     visible: (x,y)->
         # returns the square
         #   [ i_a -> i_b ]  x  [ j_a, j_b ]

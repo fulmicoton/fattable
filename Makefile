@@ -5,10 +5,10 @@ closure/compiler.jar:
 	mkdir closure
 	cd closure && wget http://dl.google.com/closure-compiler/compiler-latest.zip && unzip compiler-latest.zip
 
-%.js: %.coffee
-	coffee -c $^ 
+%.js: src/%.coffee
+	coffee  -o . -c $^
 
-%.css: %.less
+%.css: src/%.less
 	lessc $^ > $@
 
 fattable.min.js: fattable.js closure/compiler.jar

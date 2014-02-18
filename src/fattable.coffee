@@ -76,7 +76,7 @@ class SyncTableData extends TableData
     hasColumn: (j)-> true
 
     getCell: (i,j, cb=(->))->
-        cb ("cell" + i + "," + j)
+        cb @getCellSync i,j
 
     getHeader: (j,cb=(->))->
         cb ("col " + j)

@@ -405,12 +405,16 @@
         return _this.container.className = "fattable-body-container";
       });
       this.container.addEventListener('mousemove', function(evt) {
-        var newX, newY;
-        if (_this.dragging) {
-          newX = -evt.clientX + _this.dragging_dX;
-          newY = -evt.clientY + _this.dragging_dY;
-          return _this.setScrollXY(newX, newY);
-        }
+        var deferred;
+        deferred = function() {
+          var newX, newY;
+          if (_this.dragging) {
+            newX = -evt.clientX + _this.dragging_dX;
+            newY = -evt.clientY + _this.dragging_dY;
+            return _this.setScrollXY(newX, newY);
+          }
+        };
+        return window.setTimeout(deferred, 0);
       });
       this.container.addEventListener('mouseout', function(evt) {
         if (_this.dragging) {

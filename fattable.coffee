@@ -195,13 +195,12 @@ closest = (x, vals...)->
     res
 
 
-class CellPainter
+class Painter
 
     # The cell painter tells how 
     # to fill, and style cells.
     # Do not set height or width.
     # in either fill and setup methods.
-
     setupCell: (cellDiv)->
         # Setup method are called at the creation
         # of the cells. That is during initialization
@@ -216,6 +215,20 @@ class CellPainter
         # event.
         #
         # Columns are recycled.
+
+    cleanUpCell: (cellDiv)->
+        # Will be called whenever a cell is
+        # put out of the DOM
+
+    cleanUpColumnHeader: (columnHeaderDiv)->
+        # Will be called whenever a column is
+        # put out of the DOM
+
+    cleanUp: (table)->
+        for _,cell of table.cells
+            @cleanUpCell cell
+        for _,colHeader of table.columns
+            @cleanUpColumnHeader colHeader
 
     fillColumnHeader: (colHeaderDiv, data)->
         # Fills and style a column div.
@@ -361,7 +374,7 @@ class TableView
         else
             throw "Container must be a string or a dom element."
 
-        @readRequiredParameter parameters, "painter", new CellPainter()
+        @readRequiredParameter parameters, "painter", new Painter()
         @readRequiredParameter parameters, "data"
         @readRequiredParameter parameters, "nbRows"
         @readRequiredParameter parameters, "rowHeight"
@@ -373,9 +386,10 @@ class TableView
         @H = @rowHeight * @nbRows
         @columnOffset = cumsum @columnWidths
         @W = @columnOffset[@columnOffset.length-1]
-        domReadyPromise.then => @setup()
-        window.addEventListener "resize", => @setup()
-
+        @columns = {}
+        @cells = {}
+        domReadyPromise.then => @setup()       
+    
     visible: (x,y)->
         # returns the square
         #   [ i_a -> i_b ]  x  [ j_a, j_b ]
@@ -384,6 +398,7 @@ class TableView
         [i, j]
 
     setup: ->
+        @painter.cleanUp(this);
         # can be called when resizing the window
         @columns = {}
         @cells = {}
@@ -414,7 +429,6 @@ class TableView
         @bodyViewport.className = "fattable-viewport"
         @bodyViewport.style.width = @W + "px"
         @bodyViewport.style.height = @H + "px"
-
 
         for j in [@nbColsVisible ... @nbColsVisible*2] by 1
             for i in [@nbRowsVisible...@nbRowsVisible*2] by 1
@@ -567,7 +581,7 @@ fattable = (params)->
 ns =
     TableData: TableData
     TableView: TableView
-    CellPainter: CellPainter
+    Painter: Painter
     PagedAsyncTableData: PagedAsyncTableData
     SyncTableData: SyncTableData
     bound: bound

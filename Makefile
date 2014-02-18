@@ -1,4 +1,4 @@
-all: fattable.min.js fattable.js fattable.css example.js
+all: fattable.min.js fattable.js fattable.css
 
 closure/compiler.jar:
 	rm -fr closure

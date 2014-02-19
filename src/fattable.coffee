@@ -1,3 +1,4 @@
+"use strict";
 
 cumsum = (arr)->
     cs = [ 0.0 ]
@@ -391,6 +392,7 @@ class TableView
         @cells = {}
         domReadyPromise.then => @setup()       
 
+
     visible: (x,y)->
         # returns the square
         #   [ i_a -> i_b ]  x  [ j_a, j_b ]
@@ -449,15 +451,15 @@ class TableView
             @headerViewport.appendChild el
         @firstVisibleRow = @nbRowsVisible
         @firstVisibleColumn = @nbColsVisible
-        @goTo 0,0
+        @display 0,0
         @container.appendChild @bodyContainer
         @container.appendChild @headerContainer
         @bodyContainer.appendChild @bodyViewport
         @refreshAllContent()
-        @scrollBarProxy = new ScrollBarProxy @bodyContainer, @W, @H
-        @scrollBarProxy.onScroll = (x,y)=>
+        @scroll = new ScrollBarProxy @bodyContainer, @W, @H
+        @scroll.onScroll = (x,y)=>
             [i,j] = @visible x,y
-            @goTo i,j
+            @display i,j
             @headerViewport.style.left = -x + "px"
             @bodyViewport.style.left = -x + "px";
             @bodyViewport.style.top = -y + "px";
@@ -484,14 +486,17 @@ class TableView
 
     onScroll: (x,y)->
 
-
     goTo: (i,j)->
+        @scroll.setScrollXY @columnOffset[j],  @rowHeight*i
+
+    display: (i,j)->
         @headerContainer.style.display = "none"
         @bodyContainer.style.display = "none"
         @moveX j
         @moveY i
         @headerContainer.style.display = ""
         @bodyContainer.style.display = ""
+
 
     moveX: (j)->
         last_i = @firstVisibleRow

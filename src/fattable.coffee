@@ -40,6 +40,7 @@ onLoad = ->
     domReadyPromise.resolve()
 document.addEventListener "DOMContentLoaded", onLoad
 
+
 class TableData
 
     hasCell: (i,j)-> false
@@ -267,9 +268,25 @@ smallest_diff_subsequence = (arr, w)->
 
 
 
+
+class EventRegister
+
+    constructor: ->
+        @boundEvents = []
+
+    bind: (target, evt, cb)->
+        @boundEvents.push [target, evt, cb]
+        target.addEventListener evt, cb
+
+    unbindAll: ->
+        for [target, evt, cb] in @boundEvents
+            target.removeEventListener evt, cb
+        @boundEvents = []
+
+
 class ScrollBarProxy
 
-    constructor: (@container, @W, @H)->
+    constructor: (@container, @W, @H, eventRegister)->
         @verticalScrollbar = document.createElement "div"
         @verticalScrollbar.className += " fattable-v-scrollbar"
         @horizontalScrollbar = document.createElement "div"
@@ -299,16 +316,16 @@ class ScrollBarProxy
                 @onScroll @scrollLeft,@scrollTop
 
         # setting up middle click drag
-        @container.addEventListener 'mousedown', (evt)=>
+        eventRegister.bind @container, 'mousedown', (evt)=>
             if evt.button == 1
                 @dragging = true
                 @container.className = "fattable-body-container fattable-moving"
                 @dragging_dX = @scrollLeft + evt.clientX
                 @dragging_dY = @scrollTop + evt.clientY
-        @container.addEventListener 'mouseup', =>
+        eventRegister.bind @container, 'mouseup', =>
             @dragging = false
             @container.className = "fattable-body-container"
-        @container.addEventListener 'mousemove', (evt)=>
+        eventRegister.bind @container, 'mousemove', (evt)=>
             # Firefox pb see https://bugzilla.mozilla.org/show_bug.cgi?id=732621
             deferred = =>
                 if @dragging
@@ -316,8 +333,8 @@ class ScrollBarProxy
                     newY = -evt.clientY + @dragging_dY
                     @setScrollXY newX, newY
             window.setTimeout deferred, 0
-            
-        @container.addEventListener 'mouseout', (evt)=>
+        
+        eventRegister.bind @container, 'mouseout', (evt)=>
             if @dragging
                 if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @container)
                     @container.className = "fattable-body-container"
@@ -336,12 +353,10 @@ class ScrollBarProxy
             # TODO support other browsers
             if evt.type is "mousewheel"
                 @setScrollXY @scrollLeft - evt.wheelDeltaX, @scrollTop - evt.wheelDeltaY
-
-        if @container.addEventListener
-            @container.addEventListener "mousewheel", onMouseWheel, false
-            @container.addEventListener "DOMMouseScroll", onMouseWheel, false
-        else @container.attachEvent "onmousewheel", onMouseWheel
-    
+        
+        eventRegister.bind @container, "mousewheel", onMouseWheel
+        eventRegister.bind @container, "DOMMouseScroll", onMouseWheel
+        
     onScroll: (x,y)->
 
     setScrollXY: (x,y)->
@@ -352,6 +367,7 @@ class ScrollBarProxy
         @horizontalScrollbar.scrollLeft = x
         @verticalScrollbar.scrollTop = y
         @onScroll x,y
+
 
 class TableView
 
@@ -390,8 +406,8 @@ class TableView
         @W = @columnOffset[@columnOffset.length-1]
         @columns = {}
         @cells = {}
-        domReadyPromise.then => @setup()       
-
+        @eventRegister = new EventRegister()
+        domReadyPromise.then => @setup()
 
     visible: (x,y)->
         # returns the square
@@ -400,8 +416,15 @@ class TableView
         j = bound binary_search(@columnOffset, x), 0, (@nbCols - @nbColsVisible)
         [i, j]
 
+    cleanUp: ->
+        # be nice rewind !
+        @eventRegister.unbindAll()
+        @ScrollBarProxy?.onScroll = null
+        @painter.cleanUp this
+
     setup: ->
-        @painter.cleanUp(this);
+        @cleanUp()
+        
         # can be called when resizing the window
         @columns = {}
         @cells = {}
@@ -449,6 +472,7 @@ class TableView
             @painter.setupColumnHeader el
             @columns[c] = el
             @headerViewport.appendChild el
+
         @firstVisibleRow = @nbRowsVisible
         @firstVisibleColumn = @nbColsVisible
         @display 0,0
@@ -456,7 +480,7 @@ class TableView
         @container.appendChild @headerContainer
         @bodyContainer.appendChild @bodyViewport
         @refreshAllContent()
-        @scroll = new ScrollBarProxy @bodyContainer, @W, @H
+        @scroll = new ScrollBarProxy @bodyContainer, @W, @H, @eventRegister
         @scroll.onScroll = (x,y)=>
             [i,j] = @visible x,y
             @display i,j

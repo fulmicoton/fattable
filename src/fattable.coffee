@@ -421,6 +421,9 @@ class TableView
         @eventRegister.unbindAll()
         @ScrollBarProxy?.onScroll = null
         @painter.cleanUp this
+        @container.innerHTML = ""
+        @bodyContainer = null
+        @headerContainer = null
 
     setup: ->
         @cleanUp()

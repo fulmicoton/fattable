@@ -10,10 +10,6 @@ cumsum = (arr)->
 isReady = false
 isReadyCallbacks = []
 
-document.addEventListener "DOMContentLoaded", =>
-    document.removeEventListener "DOMContentLoaded", arguments.callee
-
-
 bound = (x, m, M)->
     if (x < m) then m else if (x > M) then M else x
 
@@ -38,9 +34,10 @@ class Promise
 
 domReadyPromise = new Promise()
 
-document.addEventListener "DOMContentLoaded", ->
-    document.removeEventListener "DOMContentLoaded", arguments.callee
+onLoad = ->
+    document.removeEventListener "DOMContentLoaded", onLoad
     domReadyPromise.resolve()
+document.addEventListener "DOMContentLoaded", onLoad
 
 class TableData
 

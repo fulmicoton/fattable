@@ -41,7 +41,7 @@ onLoad = ->
 document.addEventListener "DOMContentLoaded", onLoad
 
 
-class TableData
+class TableModel
 
     hasCell: (i,j)-> false
 
@@ -55,7 +55,7 @@ class TableData
     getHeader: (j,cb=(->))->
         cb("col " + j)
 
-class SyncTableData extends TableData
+class SyncTableModel extends TableModel
     # Extends this class if you 
     # don't need to access your data in a asynchronous 
     # fashion (e.g. via ajax).
@@ -115,14 +115,13 @@ class LRUCache
 
 
 
-class PagedAsyncTableData extends TableData
+class PagedAsyncTableModel extends TableModel
     # Extend this class if you have access
     # to your data in a page fashion 
     # and you want to use a LRU cache
     constructor: (cacheSize=100)->
         @pageCache = new LRUCache cacheSize
         @fetchCallbacks = {}
-
     cellPageName: (i,j)->
         # Override me
         # Should return a string identifying your page.
@@ -141,10 +140,11 @@ class PagedAsyncTableData extends TableData
         else
             @fetchCallbacks[pageName] = [ [i, j, cb ] ]
             @fetchCellPage pageName, (page)=>
+                @pageCache.set pageName, page
                 for [i,j,cb] in @fetchCallbacks[pageName]
                     cb page(i,j)
                 delete @fetchCallbacks[pageName]
-                @pageCache.set pageName, page
+                
 
     fetchCellPage: (pageName, cb)->
         # override this
@@ -393,6 +393,7 @@ class TableView
             throw "Container must be a string or a dom element."
 
         @readRequiredParameter parameters, "painter", new Painter()
+        @readRequiredParameter parameters, "autoSetup", true
         @readRequiredParameter parameters, "data"
         @readRequiredParameter parameters, "nbRows"
         @readRequiredParameter parameters, "rowHeight"
@@ -407,9 +408,17 @@ class TableView
         @columns = {}
         @cells = {}
         @eventRegister = new EventRegister()
-        domReadyPromise.then => @setup()
+        @getContainerDimension()
+        if @autoSetup
+            domReadyPromise.then => @setup()
 
-    visible: (x,y)->
+    getContainerDimension: ->
+        @w = @container.offsetWidth
+        @h = @container.offsetHeight - @headerHeight
+        @nbColsVisible = Math.min( smallest_diff_subsequence(@columnOffset, @w) + 2, @columnWidths.length)
+        @nbRowsVisible = (@h / @rowHeight | 0) + 2
+
+    leftTopCornerFromXY: (x,y)->
         # returns the square
         #   [ i_a -> i_b ]  x  [ j_a, j_b ]
         i = bound (y / @rowHeight | 0), 0, (@nbRows - @nbRowsVisible)
@@ -425,18 +434,19 @@ class TableView
         @bodyContainer = null
         @headerContainer = null
 
+
+
     setup: ->
         @cleanUp()
-        
+        @getContainerDimension()
+
         # can be called when resizing the window
         @columns = {}
         @cells = {}
 
+        
         @container.innerHTML = ""
-        @w = @container.offsetWidth
-        @h = @container.offsetHeight - @headerHeight
-        @nbColsVisible = Math.min( smallest_diff_subsequence(@columnOffset, @w) + 2, @columnWidths.length)
-        @nbRowsVisible = (@h / @rowHeight | 0) + 2
+
 
         # header container
         @headerContainer = document.createElement "div"
@@ -485,7 +495,7 @@ class TableView
         @refreshAllContent()
         @scroll = new ScrollBarProxy @bodyContainer, @W, @H, @eventRegister
         @scroll.onScroll = (x,y)=>
-            [i,j] = @visible x,y
+            [i,j] = @leftTopCornerFromXY x,y
             @display i,j
             @headerViewport.style.left = -x + "px"
             @bodyViewport.style.left = -x + "px";
@@ -493,6 +503,8 @@ class TableView
             clearTimeout @scrollEndTimer 
             @scrollEndTimer = setTimeout @refreshAllContent.bind(this), 200
             @onScroll x,y
+
+
 
     refreshAllContent: ->
         for j in [@firstVisibleColumn ... @firstVisibleColumn + @nbColsVisible] by 1
@@ -612,11 +624,11 @@ fattable = (params)->
     new TableView params
 
 ns =
-    TableData: TableData
+    TableModel: TableModel
     TableView: TableView
     Painter: Painter
-    PagedAsyncTableData: PagedAsyncTableData
-    SyncTableData: SyncTableData
+    PagedAsyncTableModel: PagedAsyncTableModel
+    SyncTableModel: SyncTableModel
     bound: bound
 
 for k,v of ns

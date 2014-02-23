@@ -266,9 +266,6 @@ smallest_diff_subsequence = (arr, w)->
     return l
 
 
-
-
-
 class EventRegister
 
     constructor: ->
@@ -618,7 +615,6 @@ class TableView
                         cell.pending = true
                         @painter.fillCellPending cell
         @firstVisibleRow = i
-
 
 fattable = (params)->
     new TableView params

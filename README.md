@@ -29,7 +29,7 @@ Cells must have a constant height, you need to give an array with your column wi
       "nbRows": 1000000,     // overall number of rows
       "rowHeight": 35,       // constant row height (px)
       "headerHeight": 100,   // height of the header (px)
-      "columnWidth": [300, 300, 300, 300] // array of column width (px) 
+      "columnWidths": [300, 300, 300, 300] // array of column width (px) 
     })  
 
 ## Painter

@@ -647,7 +647,7 @@
 
       _fn = function(columnHeader) {
         if (columnHeader.pending) {
-          return _this.data.getHeader(j, function(data) {
+          return _this.model.getHeader(j, function(data) {
             columnHeader.pending = false;
             return _this.painter.fillColumnHeader(columnHeader, data);
           });
@@ -667,7 +667,7 @@
             cell = this.cells[k];
             if (cell.pending) {
               _results1.push((function(cell) {
-                return _this.data.getCell(i, j, function(data) {
+                return _this.model.getCell(i, j, function(data) {
                   cell.pending = false;
                   return _this.painter.fillCell(cell, data);
                 });
@@ -720,8 +720,8 @@
         col_width = this.columnWidths[dest_j] + "px";
         columnHeader = this.columns[orig_j];
         delete this.columns[orig_j];
-        if (this.data.hasColumn(dest_j)) {
-          this.data.getHeader(dest_j, function(data) {
+        if (this.model.hasColumn(dest_j)) {
+          this.model.getHeader(dest_j, function(data) {
             columnHeader.pending = false;
             return _this.painter.fillColumnHeader(columnHeader, data);
           });
@@ -733,8 +733,8 @@
         columnHeader.style.width = col_width;
         this.columns[dest_j] = columnHeader;
         _fn = function(cell) {
-          if (_this.data.hasCell(i, dest_j)) {
-            return _this.data.getCell(i, dest_j, function(data) {
+          if (_this.model.hasCell(i, dest_j)) {
+            return _this.model.getCell(i, dest_j, function(data) {
               cell.pending = false;
               return _this.painter.fillCell(cell, data);
             });
@@ -777,8 +777,8 @@
         }
         row_y = dest_i * this.rowHeight + "px";
         _fn = function(cell) {
-          if (_this.data.hasCell(dest_i, j)) {
-            return _this.data.getCell(dest_i, j, function(data) {
+          if (_this.model.hasCell(dest_i, j)) {
+            return _this.model.getCell(dest_i, j, function(data) {
               cell.pending = false;
               return _this.painter.fillCell(cell, data);
             });

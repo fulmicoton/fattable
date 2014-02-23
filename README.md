@@ -8,6 +8,11 @@ Fattable is a javascript Library to create table with infinite scroll, with infi
 Big table (more 10,000 cells) don't do well with DOM.
 Your scroll will start getting choppy.
 
+Also big tables can rapidly grow in sizes. It is not always possible to have clients download or even retain all of the table data. Fattable includes everything required to load your data asynchronously.
+
+Checkout the [demo](http://fulmicoton.com/fattable/index.html) here.
+
+
 This library is
 
  - **light** : no library needed, smaller than 10KB)
@@ -25,7 +30,7 @@ Cells must have a constant height, you need to give an array with your column wi
 
     var table = fattable({
       "painter": painter,    // your painter (see below)
-      "data": data,          // your data layer (see below)
+      "model": model,          // your data layer (see below)
       "nbRows": 1000000,     // overall number of rows
       "rowHeight": 35,       // constant row height (px)
       "headerHeight": 100,   // height of the header (px)

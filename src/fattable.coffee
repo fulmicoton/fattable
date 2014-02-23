@@ -508,7 +508,7 @@ class TableView
             columnHeader = @columns[j]
             do (columnHeader)=>
                 if columnHeader.pending
-                    @data.getHeader j, (data)=>
+                    @model.getHeader j, (data)=>
                         columnHeader.pending = false
                         @painter.fillColumnHeader columnHeader, data
             for i in [@firstVisibleRow ... @firstVisibleRow + @nbRowsVisible] by 1
@@ -516,7 +516,7 @@ class TableView
                 cell = @cells[k]
                 if cell.pending
                     do (cell)=>
-                        @data.getCell i,j,(data)=>
+                        @model.getCell i,j,(data)=>
                             cell.pending = false
                             @painter.fillCell cell,data
 
@@ -555,8 +555,8 @@ class TableView
             # move the column header
             columnHeader = @columns[orig_j]
             delete @columns[orig_j]
-            if @data.hasColumn dest_j
-                @data.getHeader dest_j, (data)=>
+            if @model.hasColumn dest_j
+                @model.getHeader dest_j, (data)=>
                     columnHeader.pending = false
                     @painter.fillColumnHeader columnHeader, data
             else if not columnHeader.pending
@@ -575,8 +575,8 @@ class TableView
                 cell.style.left = col_x
                 cell.style.width = col_width
                 do (cell)=>
-                    if @data.hasCell(i, dest_j)
-                        @data.getCell i, dest_j, (data)=>
+                    if @model.hasCell(i, dest_j)
+                        @model.getCell i, dest_j, (data)=>
                             cell.pending = false
                             @painter.fillCell cell, data
                     else if not cell.pending
@@ -607,8 +607,8 @@ class TableView
                 @cells[ dest_i + "," + j] = cell
                 cell.style.top = row_y
                 do (cell)=>
-                    if @data.hasCell dest_i, j
-                        @data.getCell dest_i, j, (data)=>
+                    if @model.hasCell dest_i, j
+                        @model.getCell dest_i, j, (data)=>
                             cell.pending = false
                             @painter.fillCell cell, data
                     else if not cell.pending

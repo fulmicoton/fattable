@@ -21,9 +21,6 @@ This library is
  - **powerful and unbloated** : Design is up to you. Style the table via
  css and use your painter to hook up events, and render your content in your cell.
 
-## Limitations
-
-Cells must have a constant height, you need to give an array with your column widths. Also because it is light
 
 
 ## API

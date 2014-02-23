@@ -1,5 +1,8 @@
 # Fattable
 
+## Demo
+
+Checkout the [demo](http://fulmicoton.com/fattable/index2.html) here.
 
 ## What is it?
 
@@ -9,8 +12,6 @@ Big table (more 10,000 cells) don't do well with DOM.
 Your scroll will start getting choppy.
 
 Also big tables can rapidly grow in sizes. It is not always possible to have clients download or even retain all of the table data. Fattable includes everything required to load your data asynchronously.
-
-Checkout the [demo](http://fulmicoton.com/fattable/index2.html) here.
 
 This library is
 

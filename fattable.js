@@ -129,7 +129,7 @@
       return true;
     };
 
-    SyncTableModel.prototype.hasColumn = function(j) {
+    SyncTableModel.prototype.hasHeader = function(j) {
       return true;
     };
 
@@ -193,10 +193,39 @@
         cacheSize = 100;
       }
       this.pageCache = new LRUCache(cacheSize);
+      this.headerPageCache = new LRUCache(cacheSize);
       this.fetchCallbacks = {};
+      this.headerFetchCallbacks = {};
     }
 
     PagedAsyncTableModel.prototype.cellPageName = function(i, j) {};
+
+    PagedAsyncTableModel.prototype.headerPageName = function(j) {};
+
+    PagedAsyncTableModel.prototype.getHeader = function(j) {
+      var pageName,
+        _this = this;
+
+      pageName = this.headerPageName(j);
+      if (this.headerPageCache.has(pageName)) {
+        return cb(this.headerPageCache.get(pageName)(j));
+      } else if (this.headerFetchCallbacks[pageName] != null) {
+        return this.headerFetchCallbacks[pageName].push([j, cb]);
+      } else {
+        this.headerFetchCallbacks[pageName] = [[j, cb]];
+        return this.fetchHeaderPage(pageName, function(page) {
+          var cb, _i, _len, _ref1, _ref2;
+
+          _this.headerPageCache.set(pageName, page);
+          _ref1 = _this.headerFetchCallbacks[pageName];
+          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+            _ref2 = _ref1[_i], j = _ref2[0], cb = _ref2[1];
+            cb(page(j));
+          }
+          return delete _this.headerFetchCallbacks[pageName];
+        });
+      }
+    };
 
     PagedAsyncTableModel.prototype.hasCell = function(i, j) {
       var pageName;
@@ -233,21 +262,7 @@
       }
     };
 
-    PagedAsyncTableModel.prototype.fetchCellPage = function(pageName, cb) {
-      var I, J, page, _ref1;
-
-      _ref1 = JSON.parse(pageName), I = _ref1[0], J = _ref1[1];
-      page = function(i, j) {
-        return pageName + ":" + (i - I) + "," + (j - J);
-      };
-      return window.setTimeout((function() {
-        return cb(page);
-      }), 500);
-    };
-
-    PagedAsyncTableModel.prototype.hasColumn = function(j) {
-      return true;
-    };
+    PagedAsyncTableModel.prototype.fetchCellPage = function(pageName, cb) {};
 
     PagedAsyncTableModel.prototype.getHeader = function(j, cb) {
       if (cb == null) {
@@ -309,14 +324,14 @@
 
     Painter.prototype.setupCell = function(cellDiv) {};
 
-    Painter.prototype.setupColumnHeader = function(colHeaderDiv) {};
+    Painter.prototype.setupHeader = function(headerDiv) {};
 
     Painter.prototype.cleanUpCell = function(cellDiv) {};
 
-    Painter.prototype.cleanUpColumnHeader = function(columnHeaderDiv) {};
+    Painter.prototype.cleanUpHeader = function(headerDiv) {};
 
     Painter.prototype.cleanUp = function(table) {
-      var cell, colHeader, _, _ref1, _ref2, _results;
+      var cell, header, _, _ref1, _ref2, _results;
 
       _ref1 = table.cells;
       for (_ in _ref1) {
@@ -326,22 +341,22 @@
       _ref2 = table.columns;
       _results = [];
       for (_ in _ref2) {
-        colHeader = _ref2[_];
-        _results.push(this.cleanUpColumnHeader(colHeader));
+        header = _ref2[_];
+        _results.push(this.cleanUpHeader(header));
       }
       return _results;
     };
 
-    Painter.prototype.fillColumnHeader = function(colHeaderDiv, data) {
-      return colHeaderDiv.textContent = data;
+    Painter.prototype.fillHeader = function(headerDiv, data) {
+      return headerDiv.textContent = data;
     };
 
     Painter.prototype.fillCell = function(cellDiv, data) {
       return cellDiv.textContent = data;
     };
 
-    Painter.prototype.fillColumnHeaderPending = function(cellDiv) {
-      return cellDiv.textContent = "NA";
+    Painter.prototype.fillHeaderPending = function(headerDiv) {
+      return headerDiv.textContent = "NA";
     };
 
     Painter.prototype.fillCellPending = function(cellDiv) {
@@ -615,7 +630,7 @@
         el = document.createElement("div");
         el.style.height = this.headerHeight + "px";
         el.pending = false;
-        this.painter.setupColumnHeader(el);
+        this.painter.setupHeader(el);
         this.columns[c] = el;
         this.headerViewport.appendChild(el);
       }
@@ -642,21 +657,21 @@
     };
 
     TableView.prototype.refreshAllContent = function() {
-      var cell, columnHeader, i, j, k, _fn, _i, _ref1, _ref2, _results,
+      var cell, header, i, j, k, _fn, _i, _ref1, _ref2, _results,
         _this = this;
 
-      _fn = function(columnHeader) {
-        if (columnHeader.pending) {
+      _fn = function(header) {
+        if (header.pending) {
           return _this.model.getHeader(j, function(data) {
-            columnHeader.pending = false;
-            return _this.painter.fillColumnHeader(columnHeader, data);
+            header.pending = false;
+            return _this.painter.fillHeader(header, data);
           });
         }
       };
       _results = [];
       for (j = _i = _ref1 = this.firstVisibleColumn, _ref2 = this.firstVisibleColumn + this.nbColsVisible; _i < _ref2; j = _i += 1) {
-        columnHeader = this.columns[j];
-        _fn(columnHeader);
+        header = this.columns[j];
+        _fn(header);
         _results.push((function() {
           var _j, _ref3, _ref4, _results1,
             _this = this;
@@ -698,7 +713,7 @@
     };
 
     TableView.prototype.moveX = function(j) {
-      var cell, col_width, col_x, columnHeader, dest_j, dj, i, k, last_i, last_j, offset_j, orig_j, shift_j, _fn, _i, _j, _ref1,
+      var cell, col_width, col_x, dest_j, dj, header, i, k, last_i, last_j, offset_j, orig_j, shift_j, _fn, _i, _j, _ref1,
         _this = this;
 
       last_i = this.firstVisibleRow;
@@ -718,20 +733,20 @@
         }
         col_x = this.columnOffset[dest_j] + "px";
         col_width = this.columnWidths[dest_j] + "px";
-        columnHeader = this.columns[orig_j];
+        header = this.columns[orig_j];
         delete this.columns[orig_j];
         if (this.model.hasColumn(dest_j)) {
           this.model.getHeader(dest_j, function(data) {
-            columnHeader.pending = false;
-            return _this.painter.fillColumnHeader(columnHeader, data);
+            header.pending = false;
+            return _this.painter.fillHeader(header, data);
           });
-        } else if (!columnHeader.pending) {
-          columnHeader.pending = true;
-          this.painter.fillColumnHeaderPending(columnHeader);
+        } else if (!header.pending) {
+          header.pending = true;
+          this.painter.fillHeaderPending(header);
         }
-        columnHeader.style.left = col_x;
-        columnHeader.style.width = col_width;
-        this.columns[dest_j] = columnHeader;
+        header.style.left = col_x;
+        header.style.width = col_width;
+        this.columns[dest_j] = header;
         _fn = function(cell) {
           if (_this.model.hasCell(i, dest_j)) {
             return _this.model.getCell(i, dest_j, function(data) {

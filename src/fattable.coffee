@@ -72,7 +72,7 @@ class SyncTableModel extends TableModel
     
     hasCell: (i,j)-> true
 
-    hasColumn: (j)-> true
+    hasHeader: (j)-> true
 
     getCell: (i,j, cb=(->))->
         cb @getCellSync i,j
@@ -121,11 +121,31 @@ class PagedAsyncTableModel extends TableModel
     # and you want to use a LRU cache
     constructor: (cacheSize=100)->
         @pageCache = new LRUCache cacheSize
+        @headerPageCache = new LRUCache cacheSize
         @fetchCallbacks = {}
+        @headerFetchCallbacks = {}
+
     cellPageName: (i,j)->
         # Override me
         # Should return a string identifying your page.
-        
+
+    headerPageName: (j)->
+        # Override me
+        # Should return a string identifying the page of the column.
+
+    getHeader: (j)->
+        pageName = @headerPageName j
+        if @headerPageCache.has pageName
+            cb @headerPageCache.get(pageName)(j)
+        else if @headerFetchCallbacks[pageName]?
+            @headerFetchCallbacks[pageName].push [j, cb ]
+        else
+            @headerFetchCallbacks[pageName] = [ [j, cb ] ]
+            @fetchHeaderPage pageName, (page)=>
+                @headerPageCache.set pageName, page
+                for [j,cb] in @headerFetchCallbacks[pageName]
+                    cb page(j)
+                delete @headerFetchCallbacks[pageName]
 
     hasCell: (i,j)->
         pageName = @cellPageName i,j
@@ -144,20 +164,12 @@ class PagedAsyncTableModel extends TableModel
                 for [i,j,cb] in @fetchCallbacks[pageName]
                     cb page(i,j)
                 delete @fetchCallbacks[pageName]
-                
 
     fetchCellPage: (pageName, cb)->
         # override this
         # a page is a function that 
         # returns the cell value for any (i,j)
-        [I,J] = JSON.parse pageName
-        page = (i,j)->
-            pageName + ":" + (i - I) + "," + (j - J)
-        window.setTimeout (-> cb page), 500 
 
-    hasColumn: (j)->
-        true
-    
     getHeader: (j,cb=(->))->
         cb("col " + j)
 
@@ -207,7 +219,7 @@ class Painter
         # 
         # Cells are recycled.
 
-    setupColumnHeader: (colHeaderDiv)->
+    setupHeader: (headerDiv)->
         # Setup method are called at the creation
         # of the column header. That is during
         # initialization and for all window resize
@@ -219,29 +231,29 @@ class Painter
         # Will be called whenever a cell is
         # put out of the DOM
 
-    cleanUpColumnHeader: (columnHeaderDiv)->
+    cleanUpHeader: (headerDiv)->
         # Will be called whenever a column is
         # put out of the DOM
 
     cleanUp: (table)->
         for _,cell of table.cells
             @cleanUpCell cell
-        for _,colHeader of table.columns
-            @cleanUpColumnHeader colHeader
+        for _,header of table.columns
+            @cleanUpHeader header
 
-    fillColumnHeader: (colHeaderDiv, data)->
+    fillHeader: (headerDiv, data)->
         # Fills and style a column div.
-        colHeaderDiv.textContent = data
+        headerDiv.textContent = data
 
     fillCell: (cellDiv, data)->
         # Fills and style a cell div.
         cellDiv.textContent = data
 
-    fillColumnHeaderPending: (cellDiv)->
+    fillHeaderPending: (headerDiv)->
         # Mark a column header as pending.
         # Its content is not in cache
         # and needs to be fetched
-        cellDiv.textContent = "NA"
+        headerDiv.textContent = "NA"
 
     fillCellPending: (cellDiv)->
         # Mark a cell content as pending
@@ -479,7 +491,7 @@ class TableView
             el = document.createElement "div"
             el.style.height = @headerHeight + "px"
             el.pending = false
-            @painter.setupColumnHeader el
+            @painter.setupHeader el
             @columns[c] = el
             @headerViewport.appendChild el
 
@@ -505,12 +517,12 @@ class TableView
 
     refreshAllContent: ->
         for j in [@firstVisibleColumn ... @firstVisibleColumn + @nbColsVisible] by 1
-            columnHeader = @columns[j]
-            do (columnHeader)=>
-                if columnHeader.pending
+            header = @columns[j]
+            do (header)=>
+                if header.pending
                     @model.getHeader j, (data)=>
-                        columnHeader.pending = false
-                        @painter.fillColumnHeader columnHeader, data
+                        header.pending = false
+                        @painter.fillHeader header, data
             for i in [@firstVisibleRow ... @firstVisibleRow + @nbRowsVisible] by 1
                 k = i+ ","+j
                 cell = @cells[k]
@@ -553,18 +565,18 @@ class TableView
             col_width = @columnWidths[dest_j] + "px"
 
             # move the column header
-            columnHeader = @columns[orig_j]
+            header = @columns[orig_j]
             delete @columns[orig_j]
             if @model.hasColumn dest_j
                 @model.getHeader dest_j, (data)=>
-                    columnHeader.pending = false
-                    @painter.fillColumnHeader columnHeader, data
-            else if not columnHeader.pending
-                columnHeader.pending = true
-                @painter.fillColumnHeaderPending columnHeader
-            columnHeader.style.left = col_x
-            columnHeader.style.width = col_width
-            @columns[dest_j] = columnHeader
+                    header.pending = false
+                    @painter.fillHeader header, data
+            else if not header.pending
+                header.pending = true
+                @painter.fillHeaderPending header
+            header.style.left = col_x
+            header.style.width = col_width
+            @columns[dest_j] = header
 
             # move the cells.
             for i in [ last_i...last_i+@nbRowsVisible] by 1

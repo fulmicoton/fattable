@@ -172,12 +172,12 @@ If you want to go custom, you can implement your own data model, it just has to 
       hasHeader: function(j) {
         // ... same thing for column header j
       },
-      getCell: function(i,j, cb) {
+      getCell: function(i,j,cb) {
           // fetch data associated to cell i,j 
           // and call the callback method cb with it
           // as argument
       },
-      getHeader: function(j,cb {
+      getHeader: function(j,cb) {
           // ... same thing for column header j
       }
     }

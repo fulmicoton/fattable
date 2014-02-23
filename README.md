@@ -10,8 +10,7 @@ Your scroll will start getting choppy.
 
 Also big tables can rapidly grow in sizes. It is not always possible to have clients download or even retain all of the table data. Fattable includes everything required to load your data asynchronously.
 
-Checkout the [demo](http://fulmicoton.com/fattable/index.html) here.
-
+Checkout the [demo](http://fulmicoton.com/fattable/index2.html) here.
 
 This library is
 
@@ -30,7 +29,7 @@ Cells must have a constant height, you need to give an array with your column wi
 
     var table = fattable({
       "painter": painter,    // your painter (see below)
-      "model": model,          // your data layer (see below)
+      "model": model,          // model describing your data (see below)
       "nbRows": 1000000,     // overall number of rows
       "rowHeight": 35,       // constant row height (px)
       "headerHeight": 100,   // height of the header (px)
@@ -99,8 +98,28 @@ override it.
 
 ### Synchronous Data Layer
 
-If your data is not too big, you probably can leave with fetching all your data all at once, and then display the table.
+[Demo](http://fulmicoton.com/fattable/index2.html)
+
+If your data is not too big, you probably can just fetch your data all at once, and then display the table.
 For this simple use case, the best is probably to extend the ``SyncTableData``
 object.
 
-You just need to 
+You just need to extend ``fattable.SyncTableModel`` and implement the following methods
+
+{
+  "getCellSync": function(i,j) {
+    return "cell " + i + "," + j;
+  },
+  "getHeaderSync": function(i,j) {
+    return "col " + j;
+  }
+}
+
+
+### Asynchronous and paged async model
+
+[Demo](http://fulmicoton.com/fattable/index.html)
+
+
+PagedAsyncTableModel
+

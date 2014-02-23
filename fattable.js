@@ -527,7 +527,7 @@
       }
       this.readRequiredParameter(parameters, "painter", new Painter());
       this.readRequiredParameter(parameters, "autoSetup", true);
-      this.readRequiredParameter(parameters, "data");
+      this.readRequiredParameter(parameters, "model");
       this.readRequiredParameter(parameters, "nbRows");
       this.readRequiredParameter(parameters, "rowHeight");
       this.readRequiredParameter(parameters, "columnWidths");

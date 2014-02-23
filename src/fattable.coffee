@@ -391,7 +391,7 @@ class TableView
 
         @readRequiredParameter parameters, "painter", new Painter()
         @readRequiredParameter parameters, "autoSetup", true
-        @readRequiredParameter parameters, "data"
+        @readRequiredParameter parameters, "model"
         @readRequiredParameter parameters, "nbRows"
         @readRequiredParameter parameters, "rowHeight"
         @readRequiredParameter parameters, "columnWidths"

@@ -133,7 +133,7 @@ To use such a system, you just have to extend the ``PagedAsyncTableModel``class 
           var J = (j / 29) | 0;
           return JSON.stringify([I,J]);
       },
-      "fetchCellPage": function() {
+      "fetchCellPage": function(pageName, cb) {
           // Async method to return the page of 
           var coords = JSON.parse(pageName);
           var I = coords[0];

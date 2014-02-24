@@ -488,9 +488,18 @@
         this.maxScrollVertical = 0;
       }
       onMouseWheel = function(evt) {
+        var deltaX, deltaY;
+
+        deltaX = 0;
+        deltaY = 0;
         if (evt.type === "mousewheel") {
-          return _this.setScrollXY(_this.scrollLeft - evt.wheelDeltaX, _this.scrollTop - evt.wheelDeltaY);
+          deltaX = evt.wheelDeltaX;
+          deltaY = evt.wheelDeltaY;
         }
+        if (evt.type === "DOMMouseScroll") {
+          deltaY = -50.0 * evt.detail;
+        }
+        return _this.setScrollXY(_this.scrollLeft - deltaX, _this.scrollTop - deltaY);
       };
       eventRegister.bind(this.container, "mousewheel", onMouseWheel);
       eventRegister.bind(this.container, "DOMMouseScroll", onMouseWheel);

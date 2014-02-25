@@ -488,14 +488,14 @@
         this.maxScrollVertical = 0;
       }
       onMouseWheel = function(evt) {
-        var deltaX, deltaY;
+        var deltaX, deltaY, _ref1, _ref2;
 
         evt.preventDefault();
         deltaX = 0;
         deltaY = 0;
         if (evt.type === "mousewheel") {
-          deltaX = evt.wheelDeltaX;
-          deltaY = evt.wheelDeltaY;
+          deltaX = (_ref1 = evt.wheelDeltaX) != null ? _ref1 : 0;
+          deltaY = (_ref2 = evt.wheelDeltaY) != null ? _ref2 : evt.wheelDelta;
         }
         if (evt.type === "DOMMouseScroll") {
           deltaY = -50.0 * evt.detail;

@@ -179,4 +179,11 @@ If you want to go custom, you can implement your own data model, it just has to 
       }
     }
 
+### Troubleshooting
+
+Using ``<!DOCTYPE html>`` for using the library with IE >=9. IE < 9 is simply not supported.
+
+The library currently use a huge container with overflow.
+Browser have a bit of limitation on the size of such a container.
+Expect some bug appearing at 40000 rows in IE, 500000 rows in other browsers.
 

@@ -45,7 +45,7 @@ class TableModel
 
     hasCell: (i,j)-> false
 
-    hasColumn: (j)-> false
+    hasHeader: (j)-> false
 
     getCell: (i,j, cb=(->))->
         deferred = ->
@@ -573,7 +573,7 @@ class TableView
             # move the column header
             header = @columns[orig_j]
             delete @columns[orig_j]
-            if @model.hasColumn dest_j
+            if @model.hasHeader dest_j
                 @model.getHeader dest_j, (data)=>
                     header.pending = false
                     @painter.fillHeader header, data

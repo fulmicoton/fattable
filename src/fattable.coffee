@@ -363,8 +363,8 @@ class ScrollBarProxy
             deltaX = 0
             deltaY = 0
             if evt.type == "mousewheel"
-                deltaX = evt.wheelDeltaX
-                deltaY = evt.wheelDeltaY
+                deltaX = evt.wheelDeltaX ? 0
+                deltaY = evt.wheelDeltaY ? evt.wheelDelta
             if evt.type == "DOMMouseScroll"
                 # Firefox
                 deltaY = -50.0*evt.detail

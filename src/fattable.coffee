@@ -359,6 +359,7 @@ class ScrollBarProxy
             @maxScrollVertical = 0
         
         onMouseWheel = (evt)=>
+            evt.preventDefault()
             deltaX = 0
             deltaY = 0
             if evt.type == "mousewheel"
@@ -368,6 +369,7 @@ class ScrollBarProxy
                 # Firefox
                 deltaY = -50.0*evt.detail
             @setScrollXY @scrollLeft - deltaX, @scrollTop - deltaY
+
 
         eventRegister.bind @container, "mousewheel", onMouseWheel
         eventRegister.bind @container, "DOMMouseScroll", onMouseWheel

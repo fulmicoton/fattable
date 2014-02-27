@@ -482,15 +482,12 @@
       } else {
         this.maxScrollVertical = 0;
       }
-      supportedEvent = document.createElement("div".onwheel != null) ? "wheel" : document.onmousewheel ? "mousewheel" : "DOMMouseScroll";
+      supportedEvent = this.container.onwheel !== void 0 ? "wheel" : this.container.onmousewheel !== void 0 ? "mousewheel" : "DOMMouseScroll";
       getDelta = (function() {
-        var deltaX, deltaY;
-        deltaX = 0;
-        deltaY = 0;
         switch (supportedEvent) {
           case "wheel":
             return function(evt) {
-              var _ref, _ref1, _ref2, _ref3;
+              var deltaX, deltaY, _ref, _ref1, _ref2, _ref3;
               switch (evt.deltaMode) {
                 case evt.DOM_DELTA_LINE:
                   deltaX = (_ref = -50 * evt.deltaX) != null ? _ref : 0;
@@ -504,13 +501,18 @@
             };
           case "mousewheel":
             return function(evt) {
-              var _ref, _ref1;
+              var deltaX, deltaY, _ref, _ref1;
+              deltaX = 0;
+              deltaY = 0;
               deltaX = (_ref = evt.wheelDeltaX) != null ? _ref : 0;
               deltaY = (_ref1 = evt.wheelDeltaY) != null ? _ref1 : evt.wheelDelta;
               return [deltaX, deltaY];
             };
           case "DOMMouseScroll":
             return function(evt) {
+              var deltaX, deltaY;
+              deltaX = 0;
+              deltaY = 0;
               if (evt.axis === evt.HORIZONTAL_AXI) {
                 deltaX = -50.0 * evt.detail;
               } else {

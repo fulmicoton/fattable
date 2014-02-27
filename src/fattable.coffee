@@ -358,7 +358,7 @@ class ScrollBarProxy
         else
             @maxScrollVertical = 0
         
-        supportedEvent = if document.createElement "div".onwheel? then "wheel" else if document.onmousewheel then "mousewheel" else "DOMMouseScroll"
+        supportedEvent = if @container.onwheel isnt undefined then "wheel" else if @container.onmousewheel isnt undefined then "mousewheel" else "DOMMouseScroll"
 
         getDelta = (->
                     switch supportedEvent

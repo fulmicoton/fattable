@@ -358,21 +358,39 @@ class ScrollBarProxy
         else
             @maxScrollVertical = 0
         
+        supportedEvent = if document.createElement "div".onwheel? then "wheel" else if document.onmousewheel then "mousewheel" else "DOMMouseScroll"
+
+        getDelta = (->
+                    deltaX = 0
+                    deltaY = 0
+                    switch supportedEvent
+                        when "wheel"
+                            (evt)->
+                                switch evt.deltaMode
+                                    when evt.DOM_DELTA_LINE
+                                        deltaX = -50*evt.deltaX ? 0
+                                        deltaY = -50*evt.deltaY ? 0
+                                    when evt.DOM_DELTA_PIXEL
+                                        deltaX = -1*evt.deltaX ? 0
+                                        deltaY = -1*evt.deltaY ? 0
+                                [deltaX, deltaY]
+                        when "mousewheel"
+                            (evt)->
+                                deltaX = evt.wheelDeltaX ? 0
+                                deltaY = evt.wheelDeltaY ? evt.wheelDelta
+                                [deltaX, deltaY]
+                        when "DOMMouseScroll"
+                            (evt)->
+                                if evt.axis == evt.HORIZONTAL_AXI then deltaX = -50.0*evt.detail else deltaY = -50.0*evt.detail
+                                [deltaX, deltaY]
+        )()
         onMouseWheel = (evt)=>
             evt.preventDefault()
-            deltaX = 0
-            deltaY = 0
-            if evt.type == "mousewheel"
-                deltaX = evt.wheelDeltaX ? 0
-                deltaY = evt.wheelDeltaY ? evt.wheelDelta
-            if evt.type == "DOMMouseScroll"
-                # Firefox
-                if evt.axis is evt.HORIZONTAL_AXIS then deltaX = -50.0*evt.detail else deltaY = -50.0*evt.detail
+            [deltaX, deltaY] = getDelta evt
             @setScrollXY @scrollLeft - deltaX, @scrollTop - deltaY
 
 
-        eventRegister.bind @container, "mousewheel", onMouseWheel
-        eventRegister.bind @container, "DOMMouseScroll", onMouseWheel
+        eventRegister.bind @container, supportedEvent, onMouseWheel
         
     onScroll: (x,y)->
 

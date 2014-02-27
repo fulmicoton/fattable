@@ -396,7 +396,7 @@
 
   ScrollBarProxy = (function() {
     function ScrollBarProxy(container, W, H, eventRegister) {
-      var bigContentHorizontal, bigContentVertical, onMouseWheel;
+      var bigContentHorizontal, bigContentVertical, getDelta, onMouseWheel, supportedEvent;
       this.container = container;
       this.W = W;
       this.H = H;
@@ -482,28 +482,53 @@
       } else {
         this.maxScrollVertical = 0;
       }
+      supportedEvent = document.createElement("div".onwheel != null) ? "wheel" : document.onmousewheel ? "mousewheel" : "DOMMouseScroll";
+      getDelta = (function() {
+        var deltaX, deltaY;
+        deltaX = 0;
+        deltaY = 0;
+        switch (supportedEvent) {
+          case "wheel":
+            return function(evt) {
+              var _ref, _ref1, _ref2, _ref3;
+              switch (evt.deltaMode) {
+                case evt.DOM_DELTA_LINE:
+                  deltaX = (_ref = -50 * evt.deltaX) != null ? _ref : 0;
+                  deltaY = (_ref1 = -50 * evt.deltaY) != null ? _ref1 : 0;
+                  break;
+                case evt.DOM_DELTA_PIXEL:
+                  deltaX = (_ref2 = -1 * evt.deltaX) != null ? _ref2 : 0;
+                  deltaY = (_ref3 = -1 * evt.deltaY) != null ? _ref3 : 0;
+              }
+              return [deltaX, deltaY];
+            };
+          case "mousewheel":
+            return function(evt) {
+              var _ref, _ref1;
+              deltaX = (_ref = evt.wheelDeltaX) != null ? _ref : 0;
+              deltaY = (_ref1 = evt.wheelDeltaY) != null ? _ref1 : evt.wheelDelta;
+              return [deltaX, deltaY];
+            };
+          case "DOMMouseScroll":
+            return function(evt) {
+              if (evt.axis === evt.HORIZONTAL_AXI) {
+                deltaX = -50.0 * evt.detail;
+              } else {
+                deltaY = -50.0 * evt.detail;
+              }
+              return [deltaX, deltaY];
+            };
+        }
+      })();
       onMouseWheel = (function(_this) {
         return function(evt) {
-          var deltaX, deltaY, _ref, _ref1;
+          var deltaX, deltaY, _ref;
           evt.preventDefault();
-          deltaX = 0;
-          deltaY = 0;
-          if (evt.type === "mousewheel") {
-            deltaX = (_ref = evt.wheelDeltaX) != null ? _ref : 0;
-            deltaY = (_ref1 = evt.wheelDeltaY) != null ? _ref1 : evt.wheelDelta;
-          }
-          if (evt.type === "DOMMouseScroll") {
-            if (evt.axis === evt.HORIZONTAL_AXIS) {
-              deltaX = -50.0 * evt.detail;
-            } else {
-              deltaY = -50.0 * evt.detail;
-            }
-          }
+          _ref = getDelta(evt), deltaX = _ref[0], deltaY = _ref[1];
           return _this.setScrollXY(_this.scrollLeft - deltaX, _this.scrollTop - deltaY);
         };
       })(this);
-      eventRegister.bind(this.container, "mousewheel", onMouseWheel);
-      eventRegister.bind(this.container, "DOMMouseScroll", onMouseWheel);
+      eventRegister.bind(this.container, supportedEvent, onMouseWheel);
     }
 
     ScrollBarProxy.prototype.onScroll = function(x, y) {};

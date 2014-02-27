@@ -361,8 +361,6 @@ class ScrollBarProxy
         supportedEvent = if document.createElement "div".onwheel? then "wheel" else if document.onmousewheel then "mousewheel" else "DOMMouseScroll"
 
         getDelta = (->
-                    deltaX = 0
-                    deltaY = 0
                     switch supportedEvent
                         when "wheel"
                             (evt)->
@@ -376,11 +374,15 @@ class ScrollBarProxy
                                 [deltaX, deltaY]
                         when "mousewheel"
                             (evt)->
+                                deltaX = 0
+                                deltaY = 0
                                 deltaX = evt.wheelDeltaX ? 0
                                 deltaY = evt.wheelDeltaY ? evt.wheelDelta
                                 [deltaX, deltaY]
                         when "DOMMouseScroll"
                             (evt)->
+                                deltaX = 0
+                                deltaY = 0
                                 if evt.axis == evt.HORIZONTAL_AXI then deltaX = -50.0*evt.detail else deltaY = -50.0*evt.detail
                                 [deltaX, deltaY]
         )()

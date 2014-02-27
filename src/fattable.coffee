@@ -367,7 +367,7 @@ class ScrollBarProxy
                 deltaY = evt.wheelDeltaY ? evt.wheelDelta
             if evt.type == "DOMMouseScroll"
                 # Firefox
-                deltaY = -50.0*evt.detail
+                if evt.axis is evt.HORIZONTAL_AXIS then deltaX = -50.0*evt.detail else deltaY = -50.0*evt.detail
             @setScrollXY @scrollLeft - deltaX, @scrollTop - deltaY
 
 

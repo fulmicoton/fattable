@@ -30,7 +30,7 @@
   -moz-box-sizing: border-box;
 }
 .fattable-moving {
-  cursor: move !important;
+  cursor: move;
 }
 .fattable-viewport {
   overflow: hidden;
@@ -41,12 +41,11 @@
   right: 0;
 }
 .fattable-viewport > div {
-  overflow: hidden;
   padding: 2px;
   position: absolute;
   font-size: 12px;
   font-family: sans-serif;
-  overflow: hidden !important;
+  overflow: hidden;
   text-overflow: ellipsis;
 }
 .fattable-body-container {
@@ -54,6 +53,7 @@
   overflow: hidden;
   /* overflow-x:scroll;
        overflow-y:scroll;*/
+
   bottom: 0px;
   width: 100%;
 }

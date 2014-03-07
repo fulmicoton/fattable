@@ -1,4 +1,4 @@
-"use strict";
+"use strict"
 
 cumsum = (arr)->
     cs = [ 0.0 ]
@@ -7,9 +7,6 @@ cumsum = (arr)->
         s += x
         cs.push s
     cs
-
-isReady = false
-isReadyCallbacks = []
 
 bound = (x, m, M)->
     if (x < m) then m else if (x > M) then M else x
@@ -361,31 +358,32 @@ class ScrollBarProxy
         supportedEvent = if @container.onwheel isnt undefined then "wheel" else if @container.onmousewheel isnt undefined then "mousewheel" else "DOMMouseScroll"
 
         getDelta = (->
-                    switch supportedEvent
-                        when "wheel"
-                            (evt)->
-                                switch evt.deltaMode
-                                    when evt.DOM_DELTA_LINE
-                                        deltaX = -50*evt.deltaX ? 0
-                                        deltaY = -50*evt.deltaY ? 0
-                                    when evt.DOM_DELTA_PIXEL
-                                        deltaX = -1*evt.deltaX ? 0
-                                        deltaY = -1*evt.deltaY ? 0
-                                [deltaX, deltaY]
-                        when "mousewheel"
-                            (evt)->
-                                deltaX = 0
-                                deltaY = 0
-                                deltaX = evt.wheelDeltaX ? 0
-                                deltaY = evt.wheelDeltaY ? evt.wheelDelta
-                                [deltaX, deltaY]
-                        when "DOMMouseScroll"
-                            (evt)->
-                                deltaX = 0
-                                deltaY = 0
-                                if evt.axis == evt.HORIZONTAL_AXI then deltaX = -50.0*evt.detail else deltaY = -50.0*evt.detail
-                                [deltaX, deltaY]
+            switch supportedEvent
+                when "wheel"
+                    (evt)->
+                        switch evt.deltaMode
+                            when evt.DOM_DELTA_LINE
+                                deltaX = -50*evt.deltaX ? 0
+                                deltaY = -50*evt.deltaY ? 0
+                            when evt.DOM_DELTA_PIXEL
+                                deltaX = -1*evt.deltaX ? 0
+                                deltaY = -1*evt.deltaY ? 0
+                        [deltaX, deltaY]
+                when "mousewheel"
+                    (evt)->
+                        deltaX = 0
+                        deltaY = 0
+                        deltaX = evt.wheelDeltaX ? 0
+                        deltaY = evt.wheelDeltaY ? evt.wheelDelta
+                        [deltaX, deltaY]
+                when "DOMMouseScroll"
+                    (evt)->
+                        deltaX = 0
+                        deltaY = 0
+                        if evt.axis == evt.HORIZONTAL_AXI then deltaX = -50.0*evt.detail else deltaY = -50.0*evt.detail
+                        [deltaX, deltaY]
         )()
+
         onMouseWheel = (evt)=>
             evt.preventDefault()
             [deltaX, deltaY] = getDelta evt

@@ -310,6 +310,10 @@ class ScrollBarProxy
         @horizontalScrollbar.appendChild bigContentHorizontal
         @verticalScrollbar.appendChild bigContentVertical
 
+        @scrollbarMargin = Math.max @horizontalScrollbar.offsetHeight, @verticalScrollbar.offsetWidth 
+        @verticalScrollbar.style.bottom = @scrollbarMargin + "px";
+        @horizontalScrollbar.style.right = @scrollbarMargin + "px";
+
         @scrollLeft = 0
         @scrollTop  = 0
         @horizontalScrollbar.onscroll = =>
@@ -391,7 +395,7 @@ class ScrollBarProxy
 
 
         eventRegister.bind @container, supportedEvent, onMouseWheel
-        
+
     onScroll: (x,y)->
 
     setScrollXY: (x,y)->

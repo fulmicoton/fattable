@@ -13,6 +13,10 @@
     right: @fattable-scrollbar-width;
     overflow-x: scroll;
     overflow-y: hidden;
+
+    & > div {
+        padding:0 !important;
+    }
 }
 
 .fattable-v-scrollbar {
@@ -25,7 +29,12 @@
     right: 0px;
     overflow-x: hidden;
     overflow-y: scroll;
+    & > div {
+        padding:0 !important;
+    }
 }
+
+
 
 .fattable {
     overflow: hidden;

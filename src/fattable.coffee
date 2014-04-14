@@ -399,10 +399,16 @@ class ScrollBarProxy
     onScroll: (x,y)->
 
     setScrollXY: (x,y)->
-        x = bound(x, 0, @maxScrollHorizontal)
-        y = bound(y, 0, @maxScrollVertical)
-        @scrollLeft = x
-        @scrollTop = y
+        if x?
+            x = bound(x, 0, @maxScrollHorizontal)
+            @scrollLeft = x
+        else
+            x = @scrollLeft
+        if y?
+            y = bound(y, 0, @maxScrollVertical)
+            @scrollTop = y
+        else
+            y = @scrollTop
         @horizontalScrollbar.scrollLeft = x
         @verticalScrollbar.scrollTop = y
         @onScroll x,y
@@ -565,7 +571,9 @@ class TableView
     onScroll: (x,y)->
 
     goTo: (i,j)->
-        @scroll.setScrollXY @columnOffset[j],  @rowHeight*i
+        targetY = if i? then @rowHeight*i else undefined
+        targetX = if j? then @columnOffset[j] else undefined
+        @scroll.setScrollXY targetX,  targetY
 
     display: (i,j)->
         @headerContainer.style.display = "none"

@@ -521,10 +521,18 @@
     ScrollBarProxy.prototype.onScroll = function(x, y) {};
 
     ScrollBarProxy.prototype.setScrollXY = function(x, y) {
-      x = bound(x, 0, this.maxScrollHorizontal);
-      y = bound(y, 0, this.maxScrollVertical);
-      this.scrollLeft = x;
-      this.scrollTop = y;
+      if (x != null) {
+        x = bound(x, 0, this.maxScrollHorizontal);
+        this.scrollLeft = x;
+      } else {
+        x = this.scrollLeft;
+      }
+      if (y != null) {
+        y = bound(y, 0, this.maxScrollVertical);
+        this.scrollTop = y;
+      } else {
+        y = this.scrollTop;
+      }
       this.horizontalScrollbar.scrollLeft = x;
       this.verticalScrollbar.scrollTop = y;
       return this.onScroll(x, y);
@@ -715,7 +723,10 @@
     TableView.prototype.onScroll = function(x, y) {};
 
     TableView.prototype.goTo = function(i, j) {
-      return this.scroll.setScrollXY(this.columnOffset[j], this.rowHeight * i);
+      var targetX, targetY;
+      targetY = i != null ? this.rowHeight * i : void 0;
+      targetX = j != null ? this.columnOffset[j] : void 0;
+      return this.scroll.setScrollXY(targetX, targetY);
     };
 
     TableView.prototype.display = function(i, j) {

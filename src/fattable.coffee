@@ -446,7 +446,8 @@ class TableView
         @readRequiredParameter parameters, "rowHeight"
         @readRequiredParameter parameters, "headerHeight"
         @nbCols = @columnWidths.length
-        @container.className += " fattable"
+        if (" "+@container.className+" ").search(/\sfattable\s/) == -1
+            @container.className += " fattable"
         @H = @rowHeight * @nbRows
         @columnOffset = cumsum @columnWidths
         @W = @columnOffset[@columnOffset.length-1]

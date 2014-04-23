@@ -578,7 +578,9 @@
       this.readRequiredParameter(parameters, "rowHeight");
       this.readRequiredParameter(parameters, "headerHeight");
       this.nbCols = this.columnWidths.length;
-      this.container.className += " fattable";
+      if ((" " + this.container.className + " ").search(/\sfattable\s/) === -1) {
+        this.container.className += " fattable";
+      }
       this.H = this.rowHeight * this.nbRows;
       this.columnOffset = cumsum(this.columnWidths);
       this.W = this.columnOffset[this.columnOffset.length - 1];

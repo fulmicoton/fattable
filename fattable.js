@@ -390,10 +390,11 @@
   })();
 
   ScrollBarProxy = (function() {
-    function ScrollBarProxy(container, W, H, eventRegister) {
-      var bigContentHorizontal, bigContentVertical, getDelta, onMouseWheel, supportedEvent,
+    function ScrollBarProxy(container, headerContainer, W, H, eventRegister) {
+      var bigContentHorizontal, bigContentVertical, getDelta, onMouseWheel, onMouseWheelHeader, supportedEvent,
         _this = this;
       this.container = container;
+      this.headerContainer = headerContainer;
       this.W = W;
       this.H = H;
       this.verticalScrollbar = document.createElement("div");
@@ -459,6 +460,36 @@
           }
         }
       });
+      eventRegister.bind(this.headerContainer, 'mousedown', function(evt) {
+        if (evt.button === 1) {
+          _this.headerDragging = true;
+          _this.headerContainer.className = "fattable-header-container fattable-moving";
+          return _this.dragging_dX = _this.scrollLeft + evt.clientX;
+        }
+      });
+      eventRegister.bind(this.container, 'mouseup', function() {
+        _this.headerDragging = false;
+        return _this.headerContainer.className = "fattable-header-container";
+      });
+      eventRegister.bind(this.headerContainer, 'mousemove', function(evt) {
+        var deferred;
+        deferred = function() {
+          var newX;
+          if (_this.headerDragging) {
+            newX = -evt.clientX + _this.dragging_dX;
+            return _this.setScrollXY(newX);
+          }
+        };
+        return window.setTimeout(deferred, 0);
+      });
+      eventRegister.bind(this.headerContainer, 'mouseout', function(evt) {
+        if (_this.headerDragging) {
+          if ((evt.toElement === null) || (evt.toElement.parentElement.parentElement !== _this.headerContainer)) {
+            _this.headerDragging.className = "fattable-header-container";
+            return _this.headerDragging = false;
+          }
+        }
+      });
       if (this.W > this.horizontalScrollbar.clientWidth) {
         this.maxScrollHorizontal = this.W - this.horizontalScrollbar.clientWidth;
       } else {
@@ -469,7 +500,12 @@
       } else {
         this.maxScrollVertical = 0;
       }
-      supportedEvent = this.container.onwheel !== void 0 ? "wheel" : this.container.onmousewheel !== void 0 ? "mousewheel" : "DOMMouseScroll";
+      supportedEvent = "DOMMouseScroll";
+      if (this.container.onwheel !== void 0) {
+        supportedEvent = "wheel";
+      } else if (this.container.onmousewheel !== void 0) {
+        supportedEvent = "mousewheel";
+      }
       getDelta = (function() {
         switch (supportedEvent) {
           case "wheel":
@@ -515,7 +551,14 @@
         _ref1 = getDelta(evt), deltaX = _ref1[0], deltaY = _ref1[1];
         return _this.setScrollXY(_this.scrollLeft - deltaX, _this.scrollTop - deltaY);
       };
+      onMouseWheelHeader = function(evt) {
+        var deltaX, _, _ref1;
+        evt.preventDefault();
+        _ref1 = getDelta(evt), deltaX = _ref1[0], _ = _ref1[1];
+        return _this.setScrollXY(_this.scrollLeft - deltaX, _this.scrollTop);
+      };
       eventRegister.bind(this.container, supportedEvent, onMouseWheel);
+      eventRegister.bind(this.headerContainer, supportedEvent, onMouseWheelHeader);
     }
 
     ScrollBarProxy.prototype.onScroll = function(x, y) {};
@@ -669,7 +712,7 @@
       this.container.appendChild(this.headerContainer);
       this.bodyContainer.appendChild(this.bodyViewport);
       this.refreshAllContent();
-      this.scroll = new ScrollBarProxy(this.bodyContainer, this.W, this.H, this.eventRegister);
+      this.scroll = new ScrollBarProxy(this.bodyContainer, this.headerContainer, this.W, this.H, this.eventRegister);
       return this.scroll.onScroll = function(x, y) {
         var _ref7;
         _ref7 = _this.leftTopCornerFromXY(x, y), i = _ref7[0], j = _ref7[1];

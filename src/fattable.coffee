@@ -292,7 +292,7 @@ class EventRegister
 
 class ScrollBarProxy
 
-    constructor: (@container, @W, @H, eventRegister)->
+    constructor: (@container, @headerContainer, @W, @H, eventRegister)->
         @verticalScrollbar = document.createElement "div"
         @verticalScrollbar.className += " fattable-v-scrollbar"
         @horizontalScrollbar = document.createElement "div"
@@ -343,12 +343,36 @@ class ScrollBarProxy
                     newY = -evt.clientY + @dragging_dY
                     @setScrollXY newX, newY
             window.setTimeout deferred, 0
-        
         eventRegister.bind @container, 'mouseout', (evt)=>
             if @dragging
                 if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @container)
                     @container.className = "fattable-body-container"
                     @dragging = false
+
+        # setting up middle click drag on head container
+        # (refactor this)
+        eventRegister.bind @headerContainer, 'mousedown', (evt)=>
+            if evt.button == 1
+                @headerDragging = true
+                @headerContainer.className = "fattable-header-container fattable-moving"
+                @dragging_dX = @scrollLeft + evt.clientX
+        eventRegister.bind @container, 'mouseup', =>
+            @headerDragging = false
+            @headerContainer.className = "fattable-header-container"
+        eventRegister.bind @headerContainer, 'mousemove', (evt)=>
+            # Firefox pb see https://bugzilla.mozilla.org/show_bug.cgi?id=732621
+            deferred = =>
+                if @headerDragging
+                    newX = -evt.clientX + @dragging_dX
+                    @setScrollXY newX
+            window.setTimeout deferred, 0
+        eventRegister.bind @headerContainer, 'mouseout', (evt)=>
+            if @headerDragging
+                if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @headerContainer)
+                    @headerDragging.className = "fattable-header-container"
+                    @headerDragging = false
+
+
         if @W > @horizontalScrollbar.clientWidth
             @maxScrollHorizontal = @W - @horizontalScrollbar.clientWidth
         else
@@ -359,7 +383,11 @@ class ScrollBarProxy
         else
             @maxScrollVertical = 0
         
-        supportedEvent = if @container.onwheel isnt undefined then "wheel" else if @container.onmousewheel isnt undefined then "mousewheel" else "DOMMouseScroll"
+        supportedEvent = "DOMMouseScroll"
+        if @container.onwheel isnt undefined
+            supportedEvent = "wheel"
+        else if @container.onmousewheel isnt undefined
+            supportedEvent = "mousewheel"
 
         getDelta = (->
             switch supportedEvent
@@ -393,8 +421,13 @@ class ScrollBarProxy
             [deltaX, deltaY] = getDelta evt
             @setScrollXY @scrollLeft - deltaX, @scrollTop - deltaY
 
+        onMouseWheelHeader = (evt)=>
+            evt.preventDefault()
+            [deltaX, _] = getDelta evt
+            @setScrollXY @scrollLeft - deltaX, @scrollTop
 
         eventRegister.bind @container, supportedEvent, onMouseWheel
+        eventRegister.bind @headerContainer, supportedEvent, onMouseWheelHeader
 
     onScroll: (x,y)->
 
@@ -539,7 +572,7 @@ class TableView
         @container.appendChild @headerContainer
         @bodyContainer.appendChild @bodyViewport
         @refreshAllContent()
-        @scroll = new ScrollBarProxy @bodyContainer, @W, @H, @eventRegister
+        @scroll = new ScrollBarProxy @bodyContainer, @headerContainer, @W, @H, @eventRegister
         @scroll.onScroll = (x,y)=>
             [i,j] = @leftTopCornerFromXY x,y
             @display i,j

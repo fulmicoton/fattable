@@ -546,16 +546,20 @@
         }
       })();
       onMouseWheel = function(evt) {
-        var deltaX, deltaY, _ref1;
-        evt.preventDefault();
+        var deltaX, deltaY, has_scrolled, _ref1;
         _ref1 = getDelta(evt), deltaX = _ref1[0], deltaY = _ref1[1];
-        return _this.setScrollXY(_this.scrollLeft - deltaX, _this.scrollTop - deltaY);
+        has_scrolled = _this.setScrollXY(_this.scrollLeft - deltaX, _this.scrollTop - deltaY);
+        if (has_scrolled) {
+          return evt.preventDefault();
+        }
       };
       onMouseWheelHeader = function(evt) {
-        var deltaX, _, _ref1;
-        evt.preventDefault();
+        var deltaX, has_scrolled, _, _ref1;
         _ref1 = getDelta(evt), deltaX = _ref1[0], _ = _ref1[1];
-        return _this.setScrollXY(_this.scrollLeft - deltaX, _this.scrollTop);
+        has_scrolled = _this.setScrollXY(_this.scrollLeft - deltaX, _this.scrollTop);
+        if (has_scrolled) {
+          return evt.preventDefault();
+        }
       };
       eventRegister.bind(this.container, supportedEvent, onMouseWheel);
       eventRegister.bind(this.headerContainer, supportedEvent, onMouseWheelHeader);
@@ -564,21 +568,30 @@
     ScrollBarProxy.prototype.onScroll = function(x, y) {};
 
     ScrollBarProxy.prototype.setScrollXY = function(x, y) {
+      var has_scrolled;
+      has_scrolled = false;
       if (x != null) {
         x = bound(x, 0, this.maxScrollHorizontal);
-        this.scrollLeft = x;
+        if (this.scrollLeft !== x) {
+          has_scrolled = true;
+          this.scrollLeft = x;
+        }
       } else {
         x = this.scrollLeft;
       }
       if (y != null) {
         y = bound(y, 0, this.maxScrollVertical);
-        this.scrollTop = y;
+        if (this.scrollTop !== y) {
+          has_scrolled = true;
+          this.scrollTop = y;
+        }
       } else {
         y = this.scrollTop;
       }
       this.horizontalScrollbar.scrollLeft = x;
       this.verticalScrollbar.scrollTop = y;
-      return this.onScroll(x, y);
+      this.onScroll(x, y);
+      return has_scrolled;
     };
 
     return ScrollBarProxy;

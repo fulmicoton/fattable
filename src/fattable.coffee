@@ -417,14 +417,17 @@ class ScrollBarProxy
         )()
 
         onMouseWheel = (evt)=>
-            evt.preventDefault()
             [deltaX, deltaY] = getDelta evt
-            @setScrollXY @scrollLeft - deltaX, @scrollTop - deltaY
+            has_scrolled = @setScrollXY @scrollLeft - deltaX, @scrollTop - deltaY
+            if has_scrolled
+                evt.preventDefault()
+                
 
         onMouseWheelHeader = (evt)=>
-            evt.preventDefault()
             [deltaX, _] = getDelta evt
-            @setScrollXY @scrollLeft - deltaX, @scrollTop
+            has_scrolled = @setScrollXY @scrollLeft - deltaX, @scrollTop
+            if has_scrolled
+                evt.preventDefault()
 
         eventRegister.bind @container, supportedEvent, onMouseWheel
         eventRegister.bind @headerContainer, supportedEvent, onMouseWheelHeader
@@ -432,19 +435,28 @@ class ScrollBarProxy
     onScroll: (x,y)->
 
     setScrollXY: (x,y)->
+        # returns true if we actually scrolled
+        # false is returned if for instance we 
+        # reached the bottom of the scrolling area.
+        has_scrolled = false
         if x?
             x = bound(x, 0, @maxScrollHorizontal)
-            @scrollLeft = x
+            if @scrollLeft != x
+                has_scrolled = true
+                @scrollLeft = x
         else
             x = @scrollLeft
         if y?
             y = bound(y, 0, @maxScrollVertical)
-            @scrollTop = y
+            if @scrollTop != y
+                has_scrolled = true
+                @scrollTop = y
         else
             y = @scrollTop
         @horizontalScrollbar.scrollLeft = x
         @verticalScrollbar.scrollTop = y
         @onScroll x,y
+        has_scrolled
 
 
 class TableView

@@ -76,9 +76,12 @@
 
 
     var tableData = new fattable.SyncTableModel();
+
+    var c=0;
+
     tableData.getCellSync = function(i,j) {
         return {
-            "content": "Cell " + i + "," + j,
+            "content": "Cell " + i + "," + j+"|"+c,
             "rowId": i
         }
     }
@@ -98,6 +101,12 @@
       "painter": painter,
       "columnWidths": columnWidths
     });
+
+
+    window.onclick = function() {
+        c += 1;
+        table.refreshAllContent(true);
+    };
 
     window.onresize = function() {
         table.setup();

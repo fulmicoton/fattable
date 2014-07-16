@@ -525,8 +525,6 @@ class TableView
         @bodyContainer = null
         @headerContainer = null
 
-
-
     setup: ->
         @cleanUp()
         @getContainerDimension()
@@ -535,9 +533,7 @@ class TableView
         @columns = {}
         @cells = {}
 
-        
         @container.innerHTML = ""
-
 
         # header container
         @headerContainer = document.createElement "div"
@@ -596,19 +592,18 @@ class TableView
             @onScroll x,y
 
 
-
-    refreshAllContent: ->
+    refreshAllContent: (evenNotPending=false)->
         for j in [@firstVisibleColumn ... @firstVisibleColumn + @nbColsVisible] by 1
             header = @columns[j]
             do (header)=>
-                if header.pending
+                if evenNotPending or header.pending
                     @model.getHeader j, (data)=>
                         header.pending = false
                         @painter.fillHeader header, data
             for i in [@firstVisibleRow ... @firstVisibleRow + @nbRowsVisible] by 1
-                k = i+ ","+j
+                k = i + "," + j
                 cell = @cells[k]
-                if cell.pending
+                if evenNotPending or cell.pending
                     do (cell)=>
                         @model.getCell i,j,(data)=>
                             cell.pending = false

@@ -739,11 +739,14 @@
       };
     };
 
-    TableView.prototype.refreshAllContent = function() {
+    TableView.prototype.refreshAllContent = function(evenNotPending) {
       var cell, header, i, j, k, _fn, _i, _ref1, _ref2, _results,
         _this = this;
+      if (evenNotPending == null) {
+        evenNotPending = false;
+      }
       _fn = function(header) {
-        if (header.pending) {
+        if (evenNotPending || header.pending) {
           return _this.model.getHeader(j, function(data) {
             header.pending = false;
             return _this.painter.fillHeader(header, data);
@@ -761,7 +764,7 @@
           for (i = _j = _ref3 = this.firstVisibleRow, _ref4 = this.firstVisibleRow + this.nbRowsVisible; _j < _ref4; i = _j += 1) {
             k = i + "," + j;
             cell = this.cells[k];
-            if (cell.pending) {
+            if (evenNotPending || cell.pending) {
               _results1.push((function(cell) {
                 return _this.model.getCell(i, j, function(data) {
                   cell.pending = false;

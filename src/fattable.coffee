@@ -317,13 +317,19 @@ class ScrollBarProxy
         @scrollLeft = 0
         @scrollTop  = 0
         @horizontalScrollbar.onscroll = =>
+            console.log "onhscroll"
             if not @dragging
-                @scrollLeft = @horizontalScrollbar.scrollLeft
-                @onScroll @scrollLeft,@scrollTop
+                console.log @scrollLeft, @horizontalScrollbar.scrollLeft
+                if @scrollLeft != @horizontalScrollbar.scrollLeft
+                    @scrollLeft = @horizontalScrollbar.scrollLeft
+                    @onScroll @scrollLeft,@scrollTop
         @verticalScrollbar.onscroll = =>
+            console.log "onvscroll"
             if not @dragging
-                @scrollTop = @verticalScrollbar.scrollTop
-                @onScroll @scrollLeft,@scrollTop
+                console.log @scrollTop, @verticalScrollbar.scrollTop
+                if @scrollTop != @verticalScrollbar.scrollTop
+                    @scrollTop = @verticalScrollbar.scrollTop
+                    @onScroll @scrollLeft,@scrollTop
 
         # setting up middle click drag
         eventRegister.bind @container, 'mousedown', (evt)=>

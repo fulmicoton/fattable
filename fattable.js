@@ -417,9 +417,7 @@
       this.scrollLeft = 0;
       this.scrollTop = 0;
       this.horizontalScrollbar.onscroll = function() {
-        console.log("onhscroll");
         if (!_this.dragging) {
-          console.log(_this.scrollLeft, _this.horizontalScrollbar.scrollLeft);
           if (_this.scrollLeft !== _this.horizontalScrollbar.scrollLeft) {
             _this.scrollLeft = _this.horizontalScrollbar.scrollLeft;
             return _this.onScroll(_this.scrollLeft, _this.scrollTop);
@@ -427,9 +425,7 @@
         }
       };
       this.verticalScrollbar.onscroll = function() {
-        console.log("onvscroll");
         if (!_this.dragging) {
-          console.log(_this.scrollTop, _this.verticalScrollbar.scrollTop);
           if (_this.scrollTop !== _this.verticalScrollbar.scrollTop) {
             _this.scrollTop = _this.verticalScrollbar.scrollTop;
             return _this.onScroll(_this.scrollLeft, _this.scrollTop);

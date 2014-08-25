@@ -45,12 +45,10 @@ class TableModel
     hasHeader: (j)-> false
 
     getCell: (i,j, cb=(->))->
-        deferred = ->
-            cb(i + "," + j)
-        setTimeout deferred, 100
+        cb "getCell not implemented"
 
     getHeader: (j,cb=(->))->
-        cb("col " + j)
+        cb "getHeader not implemented"
 
 class SyncTableModel extends TableModel
     # Extends this class if you 
@@ -75,7 +73,7 @@ class SyncTableModel extends TableModel
         cb @getCellSync i,j
 
     getHeader: (j,cb=(->))->
-        cb ("col " + j)
+        cb @getHeaderSync j
 
 
 
@@ -509,7 +507,7 @@ class TableView
         @w = @container.offsetWidth
         @h = @container.offsetHeight - @headerHeight
         @nbColsVisible = Math.min( smallest_diff_subsequence(@columnOffset, @w) + 2, @columnWidths.length)
-        @nbRowsVisible = (@h / @rowHeight | 0) + 2
+        @nbRowsVisible = Math.min( (@h / @rowHeight | 0) + 2, @nbRows)
 
     leftTopCornerFromXY: (x,y)->
         # returns the square

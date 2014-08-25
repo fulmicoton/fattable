@@ -1,0 +1,37 @@
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href='../../fattable.css'>
+    </head>
+    <body>
+        <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        html, body {
+            width: 500px;
+            height: 100%;
+            overflow: hidden;
+        }
+        #container {
+            width: 500px;
+            height: 1000%;
+        }
+        
+        .fattable-header-container > .fattable-viewport > div {
+            background-color: #eee;
+        }
+
+        .fattable-body-container > .fattable-viewport > div {
+            /* border: solid 1px #999;*/
+        }
+        </style>
+        <div id='container'></div>
+        <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+        <script src="../../fattable.js"></script>
+        <script src="main.js"></script>
+
+    </body>
+
+</html>

@@ -1,7 +1,7 @@
 {
   "name": "fattable",
   "main": "fattable.js",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "homepage": "https://github.com/poulejapon/fattable",
   "authors": [
     "Paul Masurel <paul.masurel@gmail.com>"

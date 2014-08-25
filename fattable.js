@@ -85,21 +85,17 @@
     };
 
     TableModel.prototype.getCell = function(i, j, cb) {
-      var deferred;
       if (cb == null) {
         cb = (function() {});
       }
-      deferred = function() {
-        return cb(i + "," + j);
-      };
-      return setTimeout(deferred, 100);
+      return cb("getCell not implemented");
     };
 
     TableModel.prototype.getHeader = function(j, cb) {
       if (cb == null) {
         cb = (function() {});
       }
-      return cb("col " + j);
+      return cb("getHeader not implemented");
     };
 
     return TableModel;
@@ -140,7 +136,7 @@
       if (cb == null) {
         cb = (function() {});
       }
-      return cb("col " + j);
+      return cb(this.getHeaderSync(j));
     };
 
     return SyncTableModel;
@@ -605,7 +601,7 @@
       this.w = this.container.offsetWidth;
       this.h = this.container.offsetHeight - this.headerHeight;
       this.nbColsVisible = Math.min(smallest_diff_subsequence(this.columnOffset, this.w) + 2, this.columnWidths.length);
-      return this.nbRowsVisible = (this.h / this.rowHeight | 0) + 2;
+      return this.nbRowsVisible = Math.min((this.h / this.rowHeight | 0) + 2, this.nbRows);
     };
 
     TableView.prototype.leftTopCornerFromXY = function(x, y) {

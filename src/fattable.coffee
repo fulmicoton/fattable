@@ -558,7 +558,7 @@ class TableView
         
         @headerViewport = document.createElement "div"
         @headerViewport.className = "fattable-viewport"
-        @headerViewport.style.width = @W + "px"
+        @headerViewport.style.width = @w + "px"
         @headerViewport.style.height = @headerHeight + "px"
         @headerContainer.appendChild @headerViewport
 
@@ -569,8 +569,8 @@ class TableView
 
         @bodyViewport = document.createElement "div"
         @bodyViewport.className = "fattable-viewport"
-        @bodyViewport.style.width = @W + "px"
-        @bodyViewport.style.height = @H + "px"
+        @bodyViewport.style.width = @w + "px"
+        @bodyViewport.style.height = @h + "px"
 
         for j in [@nbColsVisible ... @nbColsVisible*2] by 1
             for i in [@nbRowsVisible...@nbRowsVisible*2] by 1
@@ -597,16 +597,19 @@ class TableView
         @bodyContainer.appendChild @bodyViewport
         @refreshAllContent()
         @scroll = new ScrollBarProxy @bodyContainer, @headerContainer, @W, @H, @eventRegister, @scrollBarVisible, @enableDragMove
-        @scroll.onScroll = (x,y)=>
+        onScroll = (x,y)=>
             [i,j] = @leftTopCornerFromXY x,y
             @display i,j
-            @headerViewport.style.left = -x + "px"
-            @bodyViewport.style.left = -x + "px";
-            @bodyViewport.style.top = -y + "px";
+            for _, col of @columns
+                col.style.left = (col.left - x) + "px"
+            for _, cell of @cells
+                cell.style.left = (cell.left - x) + "px"
+                cell.style.top = (cell.top - y) + "px"
             clearTimeout @scrollEndTimer 
             @scrollEndTimer = setTimeout @refreshAllContent.bind(this), 200
             @onScroll x,y
-
+        @scroll.onScroll = onScroll
+        onScroll 0, 0
 
     refreshAllContent: (evenNotPending=false)->
         for j in [@firstVisibleColumn ... @firstVisibleColumn + @nbColsVisible] by 1
@@ -647,7 +650,7 @@ class TableView
         shift_j = j - last_j
         if shift_j == 0
             return
-        dj = Math.min( Math.abs(shift_j), @nbColsVisible)
+        dj = Math.min(Math.abs(shift_j), @nbColsVisible)
 
         for offset_j in [0 ... dj ] by 1
             if shift_j>0
@@ -656,7 +659,7 @@ class TableView
             else
                 orig_j = @firstVisibleColumn + @nbColsVisible - dj + offset_j
                 dest_j = j + offset_j 
-            col_x = @columnOffset[dest_j] + "px"
+            col_x = @columnOffset[dest_j]
             col_width = @columnWidths[dest_j] + "px"
 
             # move the column header
@@ -669,17 +672,18 @@ class TableView
             else if not header.pending
                 header.pending = true
                 @painter.fillHeaderPending header
-            header.style.left = col_x
+            header.left = col_x
             header.style.width = col_width
             @columns[dest_j] = header
 
             # move the cells.
-            for i in [ last_i...last_i+@nbRowsVisible] by 1
+            for i in [ last_i...last_i + @nbRowsVisible] by 1
                 k =  i  + "," + orig_j
                 cell = @cells[k]
                 delete @cells[k]
                 @cells[ i + "," + dest_j] = cell
-                cell.style.left = col_x
+                cell.left = col_x
+                # cell.style.left = col_x
                 cell.style.width = col_width
                 do (cell)=>
                     if @model.hasCell(i, dest_j)
@@ -705,14 +709,14 @@ class TableView
             else
                 orig_i = last_i + @nbRowsVisible - di + offset_i
                 dest_i = i + offset_i
-            row_y = dest_i * @rowHeight + "px"
+            row_y = dest_i * @rowHeight
             # move the cells.
             for j in [last_j...last_j+@nbColsVisible] by 1
                 k =  orig_i  + "," + j
                 cell = @cells[k]
                 delete @cells[k]
                 @cells[ dest_i + "," + j] = cell
-                cell.style.top = row_y
+                cell.top = row_y
                 do (cell)=>
                     if @model.hasCell dest_i, j
                         @model.getCell dest_i, j, (data)=>

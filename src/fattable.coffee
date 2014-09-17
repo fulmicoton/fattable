@@ -290,13 +290,15 @@ class EventRegister
 
 class ScrollBarProxy
 
-    constructor: (@container, @headerContainer, @W, @H, eventRegister)->
+    constructor: (@container, @headerContainer, @W, @H, eventRegister, @visible=true, @enableDragMove=true)->
         @verticalScrollbar = document.createElement "div"
         @verticalScrollbar.className += " fattable-v-scrollbar"
         @horizontalScrollbar = document.createElement "div"
         @horizontalScrollbar.className += " fattable-h-scrollbar"
-        @container.appendChild @verticalScrollbar
-        @container.appendChild @horizontalScrollbar
+
+        if @visible
+            @container.appendChild @verticalScrollbar
+            @container.appendChild @horizontalScrollbar
 
         bigContentHorizontal = document.createElement "div"
         bigContentHorizontal.style.height = 1 + "px";
@@ -325,51 +327,62 @@ class ScrollBarProxy
                     @scrollTop = @verticalScrollbar.scrollTop
                     @onScroll @scrollLeft,@scrollTop
 
-        # setting up middle click drag
-        eventRegister.bind @container, 'mousedown', (evt)=>
-            if evt.button == 1
-                @dragging = true
-                @container.className = "fattable-body-container fattable-moving"
-                @dragging_dX = @scrollLeft + evt.clientX
-                @dragging_dY = @scrollTop + evt.clientY
-        eventRegister.bind @container, 'mouseup', =>
-            @dragging = false
-            @container.className = "fattable-body-container"
-        eventRegister.bind @container, 'mousemove', (evt)=>
-            # Firefox pb see https://bugzilla.mozilla.org/show_bug.cgi?id=732621
-            deferred = =>
-                if @dragging
-                    newX = -evt.clientX + @dragging_dX
-                    newY = -evt.clientY + @dragging_dY
-                    @setScrollXY newX, newY
-            window.setTimeout deferred, 0
-        eventRegister.bind @container, 'mouseout', (evt)=>
-            if @dragging
-                if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @container)
-                    @container.className = "fattable-body-container"
-                    @dragging = false
 
-        # setting up middle click drag on head container
-        # (refactor this)
-        eventRegister.bind @headerContainer, 'mousedown', (evt)=>
-            if evt.button == 1
-                @headerDragging = true
-                @headerContainer.className = "fattable-header-container fattable-moving"
-                @dragging_dX = @scrollLeft + evt.clientX
-        eventRegister.bind @container, 'mouseup', =>
-            @headerDragging = false
-            @headerContainer.className = "fattable-header-container"
-        eventRegister.bind @headerContainer, 'mousemove', (evt)=>
-            # Firefox pb see https://bugzilla.mozilla.org/show_bug.cgi?id=732621
-            deferred = =>
+        if @enableDragMove
+            # setting up middle click drag
+            eventRegister.bind @container, 'mousedown', (evt)=>
+                if evt.button == 1
+                    @dragging = true
+                    @container.className = "fattable-body-container fattable-moving"
+                    @dragging_dX = @scrollLeft + evt.clientX
+                    @dragging_dY = @scrollTop + evt.clientY
+            eventRegister.bind @container, 'mouseup', (evt)=>
+                @dragging = false
+                @container.className = "fattable-body-container"
+
+            eventRegister.bind @container, 'mousemove', (evt)=>
+                # Firefox pb see https://bugzilla.mozilla.org/show_bug.cgi?id=732621
+                deferred = =>
+                    if @dragging
+                        newX = -evt.clientX + @dragging_dX
+                        newY = -evt.clientY + @dragging_dY
+                        @setScrollXY newX, newY
+                window.setTimeout deferred, 0
+            eventRegister.bind @container, 'mouseout', (evt)=>
+                if @dragging
+                    if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @container)
+                        @container.className = "fattable-body-container"
+                        @dragging = false
+
+            # setting up middle click drag on head container
+            # (refactor this)
+            eventRegister.bind @headerContainer, 'mousedown', (evt)=>
+                if evt.button == 1
+                    @headerDragging = true
+                    @headerContainer.className = "fattable-header-container fattable-moving"
+                    @dragging_dX = @scrollLeft + evt.clientX
+            eventRegister.bind @container, 'mouseup', (evt)=>
+                if evt.button == 1
+                    @headerDragging = false
+                    @headerContainer.className = "fattable-header-container"
+                    # cancel click events 
+                    # if we were actually dragging with the middle button.
+                    evt.stopPropagation()
+                    captureClick = (e)->
+                        e.stopPropagation()
+                        @removeEventListener 'click', captureClick, true
+                    @container.addEventListener 'click', captureClick, true
+            eventRegister.bind @headerContainer, 'mousemove', (evt)=>
+                # Firefox pb see https://bugzilla.mozilla.org/show_bug.cgi?id=732621
+                deferred = =>
+                    if @headerDragging
+                        newX = -evt.clientX + @dragging_dX
+                        @setScrollXY newX
+                window.setTimeout deferred, 0
+            eventRegister.bind @headerContainer, 'mouseout', (evt)=>
                 if @headerDragging
-                    newX = -evt.clientX + @dragging_dX
-                    @setScrollXY newX
-            window.setTimeout deferred, 0
-        eventRegister.bind @headerContainer, 'mouseout', (evt)=>
-            if @headerDragging
-                if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @headerContainer)
-                    @headerDragging.className = "fattable-header-container"
+                    if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @headerContainer)
+                        @headerDragging.className = "fattable-header-container"
                     @headerDragging = false
 
 
@@ -490,6 +503,9 @@ class TableView
         @readRequiredParameter parameters, "columnWidths"
         @readRequiredParameter parameters, "rowHeight"
         @readRequiredParameter parameters, "headerHeight"
+        @readRequiredParameter parameters, "scrollBarVisible", true
+        @readRequiredParameter parameters, "enableDragMove", true
+
         @nbCols = @columnWidths.length
         if (" "+@container.className+" ").search(/\sfattable\s/) == -1
             @container.className += " fattable"
@@ -580,7 +596,7 @@ class TableView
         @container.appendChild @headerContainer
         @bodyContainer.appendChild @bodyViewport
         @refreshAllContent()
-        @scroll = new ScrollBarProxy @bodyContainer, @headerContainer, @W, @H, @eventRegister
+        @scroll = new ScrollBarProxy @bodyContainer, @headerContainer, @W, @H, @eventRegister, @scrollBarVisible, @enableDragMove
         @scroll.onScroll = (x,y)=>
             [i,j] = @leftTopCornerFromXY x,y
             @display i,j

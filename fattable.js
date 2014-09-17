@@ -695,7 +695,7 @@
     };
 
     TableView.prototype.setup = function() {
-      var c, el, i, j, _i, _j, _k, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6,
+      var c, el, i, j, onScroll, _i, _j, _k, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6,
         _this = this;
       this.cleanUp();
       this.getContainerDimension();
@@ -707,7 +707,7 @@
       this.headerContainer.style.height = this.headerHeight + "px";
       this.headerViewport = document.createElement("div");
       this.headerViewport.className = "fattable-viewport";
-      this.headerViewport.style.width = this.W + "px";
+      this.headerViewport.style.width = this.w + "px";
       this.headerViewport.style.height = this.headerHeight + "px";
       this.headerContainer.appendChild(this.headerViewport);
       this.bodyContainer = document.createElement("div");
@@ -715,8 +715,8 @@
       this.bodyContainer.style.top = this.headerHeight + "px";
       this.bodyViewport = document.createElement("div");
       this.bodyViewport.className = "fattable-viewport";
-      this.bodyViewport.style.width = this.W + "px";
-      this.bodyViewport.style.height = this.H + "px";
+      this.bodyViewport.style.width = this.w + "px";
+      this.bodyViewport.style.height = this.h + "px";
       for (j = _i = _ref1 = this.nbColsVisible, _ref2 = this.nbColsVisible * 2; _i < _ref2; j = _i += 1) {
         for (i = _j = _ref3 = this.nbRowsVisible, _ref4 = this.nbRowsVisible * 2; _j < _ref4; i = _j += 1) {
           el = document.createElement("div");
@@ -743,17 +743,27 @@
       this.bodyContainer.appendChild(this.bodyViewport);
       this.refreshAllContent();
       this.scroll = new ScrollBarProxy(this.bodyContainer, this.headerContainer, this.W, this.H, this.eventRegister, this.scrollBarVisible, this.enableDragMove);
-      return this.scroll.onScroll = function(x, y) {
-        var _ref7;
+      onScroll = function(x, y) {
+        var cell, col, _, _ref7, _ref8, _ref9;
         _ref7 = _this.leftTopCornerFromXY(x, y), i = _ref7[0], j = _ref7[1];
         _this.display(i, j);
-        _this.headerViewport.style.left = -x + "px";
-        _this.bodyViewport.style.left = -x + "px";
-        _this.bodyViewport.style.top = -y + "px";
+        _ref8 = _this.columns;
+        for (_ in _ref8) {
+          col = _ref8[_];
+          col.style.left = (col.left - x) + "px";
+        }
+        _ref9 = _this.cells;
+        for (_ in _ref9) {
+          cell = _ref9[_];
+          cell.style.left = (cell.left - x) + "px";
+          cell.style.top = (cell.top - y) + "px";
+        }
         clearTimeout(_this.scrollEndTimer);
         _this.scrollEndTimer = setTimeout(_this.refreshAllContent.bind(_this), 200);
         return _this.onScroll(x, y);
       };
+      this.scroll.onScroll = onScroll;
+      return onScroll(0, 0);
     };
 
     TableView.prototype.refreshAllContent = function(evenNotPending) {
@@ -834,7 +844,7 @@
           orig_j = this.firstVisibleColumn + this.nbColsVisible - dj + offset_j;
           dest_j = j + offset_j;
         }
-        col_x = this.columnOffset[dest_j] + "px";
+        col_x = this.columnOffset[dest_j];
         col_width = this.columnWidths[dest_j] + "px";
         header = this.columns[orig_j];
         delete this.columns[orig_j];
@@ -847,7 +857,7 @@
           header.pending = true;
           this.painter.fillHeaderPending(header);
         }
-        header.style.left = col_x;
+        header.left = col_x;
         header.style.width = col_width;
         this.columns[dest_j] = header;
         _fn = function(cell) {
@@ -866,7 +876,7 @@
           cell = this.cells[k];
           delete this.cells[k];
           this.cells[i + "," + dest_j] = cell;
-          cell.style.left = col_x;
+          cell.left = col_x;
           cell.style.width = col_width;
           _fn(cell);
         }
@@ -892,7 +902,7 @@
           orig_i = last_i + this.nbRowsVisible - di + offset_i;
           dest_i = i + offset_i;
         }
-        row_y = dest_i * this.rowHeight + "px";
+        row_y = dest_i * this.rowHeight;
         _fn = function(cell) {
           if (_this.model.hasCell(dest_i, j)) {
             return _this.model.getCell(dest_i, j, function(data) {
@@ -909,7 +919,7 @@
           cell = this.cells[k];
           delete this.cells[k];
           this.cells[dest_i + "," + j] = cell;
-          cell.style.top = row_y;
+          cell.top = row_y;
           _fn(cell);
         }
       }

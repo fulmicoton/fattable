@@ -38,6 +38,14 @@ onLoad = ->
 document.addEventListener "DOMContentLoaded", onLoad
 
 
+getTranformPrefix = ->
+    el = document.createElement "div"
+    for testKey in ["transform", "WebkitTransform", "MozTransform", "OTransform", "MsTransform"]
+        if el.style[testKey] != undefined
+            return testKey
+
+prefixedTransformCssKey = getTranformPrefix()
+
 class TableModel
 
     hasCell: (i,j)-> false
@@ -601,10 +609,9 @@ class TableView
             [i,j] = @leftTopCornerFromXY x,y
             @display i,j
             for _, col of @columns
-                col.style.left = (col.left - x) + "px"
+                col.style[prefixedTransformCssKey] = "translate(" + (col.left - x) + "px, 0px)"
             for _, cell of @cells
-                cell.style.left = (cell.left - x) + "px"
-                cell.style.top = (cell.top - y) + "px"
+                cell.style[prefixedTransformCssKey] = "translate(" + (cell.left - x) + "px," + (cell.top - y) + "px)"
             clearTimeout @scrollEndTimer 
             @scrollEndTimer = setTimeout @refreshAllContent.bind(this), 200
             @onScroll x,y

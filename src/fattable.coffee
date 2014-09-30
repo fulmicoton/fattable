@@ -390,7 +390,7 @@ class ScrollBarProxy
             eventRegister.bind @headerContainer, 'mouseout', (evt)=>
                 if @headerDragging
                     if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @headerContainer)
-                        @headerDragging.className = "fattable-header-container"
+                        @headerContainer.className = "fattable-header-container"
                     @headerDragging = false
 
 

@@ -513,7 +513,7 @@
         eventRegister.bind(this.headerContainer, 'mouseout', function(evt) {
           if (_this.headerDragging) {
             if ((evt.toElement === null) || (evt.toElement.parentElement.parentElement !== _this.headerContainer)) {
-              _this.headerDragging.className = "fattable-header-container";
+              _this.headerContainer.className = "fattable-header-container";
             }
             return _this.headerDragging = false;
           }

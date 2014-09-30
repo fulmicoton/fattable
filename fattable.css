@@ -28,12 +28,36 @@
 .fattable-v-scrollbar > div {
   padding: 0 !important;
 }
+body {
+  width: 500%;
+  background-color: red;
+}
+* {
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+}
 .fattable {
   overflow: hidden;
 }
-.fattable * {
-  box-sizing: border-box;
-  -moz-box-sizing: border-box;
+.fattable ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.fattable ::-webkit-scrollbar-track {
+  -webkit-border-radius: 5px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.1);
+}
+.fattable ::-webkit-scrollbar-thumb {
+  -webkit-border-radius: 5px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.2);
+}
+.fattable ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
+.fattable ::-webkit-scrollbar-thumb:window-inactive {
+  background: rgba(0, 0, 0, 0.05);
 }
 .fattable-moving {
   cursor: move;

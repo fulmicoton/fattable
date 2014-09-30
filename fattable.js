@@ -473,7 +473,7 @@
         });
         eventRegister.bind(this.container, 'mouseout', function(evt) {
           if (_this.dragging) {
-            if ((evt.toElement === null) || (evt.toElement.parentElement.parentElement !== _this.container)) {
+            if ((evt.toElement == null) || (evt.toElement.parentElement.parentElement !== _this.container)) {
               _this.container.className = "fattable-body-container";
               return _this.dragging = false;
             }
@@ -512,7 +512,7 @@
         });
         eventRegister.bind(this.headerContainer, 'mouseout', function(evt) {
           if (_this.headerDragging) {
-            if ((evt.toElement === null) || (evt.toElement.parentElement.parentElement !== _this.headerContainer)) {
+            if ((evt.toElement == null) || (evt.toElement.parentElement.parentElement !== _this.headerContainer)) {
               _this.headerContainer.className = "fattable-header-container";
             }
             return _this.headerDragging = false;

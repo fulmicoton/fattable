@@ -358,7 +358,7 @@ class ScrollBarProxy
                 window.setTimeout deferred, 0
             eventRegister.bind @container, 'mouseout', (evt)=>
                 if @dragging
-                    if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @container)
+                    if (not evt.toElement?) || (evt.toElement.parentElement.parentElement != @container)
                         @container.className = "fattable-body-container"
                         @dragging = false
 
@@ -389,7 +389,7 @@ class ScrollBarProxy
                 window.setTimeout deferred, 0
             eventRegister.bind @headerContainer, 'mouseout', (evt)=>
                 if @headerDragging
-                    if (evt.toElement == null) || (evt.toElement.parentElement.parentElement != @headerContainer)
+                    if (not evt.toElement?) || (evt.toElement.parentElement.parentElement != @headerContainer)
                         @headerContainer.className = "fattable-header-container"
                     @headerDragging = false
 

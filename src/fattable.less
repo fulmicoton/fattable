@@ -34,13 +34,44 @@
     }
 }
 
+body {
+    width: 500%;
+    background-color: red;
+}
 
+
+* {
+    box-sizing: border-box;
+     -moz-box-sizing: border-box;
+}
 
 .fattable {
+    
     overflow: hidden;
-    * {
-        box-sizing: border-box;
-         -moz-box-sizing: border-box;
+
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        -webkit-border-radius:5px;
+        border-radius:5px;
+        background:rgba(0,0,0,0.1);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        -webkit-border-radius:5px;
+        border-radius:5px;
+        background:rgba(0,0,0,0.2);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background:rgba(0,0,0,0.4);
+    }
+
+    ::-webkit-scrollbar-thumb:window-inactive {
+        background:rgba(0,0,0,0.05);
     }
 }
 

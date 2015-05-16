@@ -543,7 +543,7 @@ class TableView
     cleanUp: ->
         # be nice rewind !
         @eventRegister.unbindAll()
-        @ScrollBarProxy?.onScroll = null
+        @scroll?.onScroll = null
         @painter.cleanUp this
         @container.innerHTML = ""
         @bodyContainer = null

@@ -52,11 +52,16 @@ class TableModel
 
     hasHeader: (j)-> false
 
+    hasFooter: (j)-> false
+
     getCell: (i,j, cb=(->))->
         cb "getCell not implemented"
 
     getHeader: (j,cb=(->))->
         cb "getHeader not implemented"
+
+    getFooter: (j,cb=(->))->
+        cb "getFooter not implemented"
 
 class SyncTableModel extends TableModel
     # Extends this class if you 
@@ -72,16 +77,24 @@ class SyncTableModel extends TableModel
     getHeaderSync: (j)->
         # Override me !
         "col " + j
+    getFooterSync: (j)->
+        # Override me !
+        "col " + j
     
     hasCell: (i,j)-> true
 
     hasHeader: (j)-> true
+
+    hasFooter: (j)-> true
 
     getCell: (i,j, cb=(->))->
         cb @getCellSync i,j
 
     getHeader: (j,cb=(->))->
         cb @getHeaderSync j
+
+    getFooter: (j,cb=(->))->
+        cb @getFooterSync j
 
 
 
@@ -123,16 +136,23 @@ class PagedAsyncTableModel extends TableModel
     # to your data in a page fashion 
     # and you want to use a LRU cache
     constructor: (cacheSize=100)->
+        super()
         @pageCache = new LRUCache cacheSize
         @headerPageCache = new LRUCache cacheSize
+        @footerPageCache = new LRUCache cacheSize
         @fetchCallbacks = {}
         @headerFetchCallbacks = {}
+        @footerFetchCallbacks = {}
 
     cellPageName: (i,j)->
         # Override me
         # Should return a string identifying your page.
 
     headerPageName: (j)->
+        # Override me
+        # Should return a string identifying the page of the column.
+
+    footerPageName: (j)->
         # Override me
         # Should return a string identifying the page of the column.
 
@@ -149,6 +169,20 @@ class PagedAsyncTableModel extends TableModel
                 for [j,cb] in @headerFetchCallbacks[pageName]
                     cb page(j)
                 delete @headerFetchCallbacks[pageName]
+
+    getFooter: (j)->
+        pageName = @footerPageName j
+        if @footerPageCache.has pageName
+            cb @footerPageCache.get(pageName)(j)
+        else if @footerFetchCallbacks[pageName]?
+            @footerFetchCallbacks[pageName].push [j, cb ]
+        else
+            @footerFetchCallbacks[pageName] = [ [j, cb ] ]
+            @fetchFooterPage pageName, (page)=>
+                @footerPageCache.set pageName, page
+                for [j,cb] in @footerFetchCallbacks[pageName]
+                    cb page(j)
+                delete @footerFetchCallbacks[pageName]
 
     hasCell: (i,j)->
         pageName = @cellPageName i,j
@@ -174,6 +208,9 @@ class PagedAsyncTableModel extends TableModel
         # returns the cell value for any (i,j)
 
     getHeader: (j,cb=(->))->
+        cb("col " + j)
+
+    getFooter: (j,cb=(->))->
         cb("col " + j)
 
 
@@ -230,6 +267,14 @@ class Painter
         #
         # Columns are recycled.
 
+    setupFooter: (footerDiv)->
+        # Setup method are called at the creation
+        # of the column footer. That is during
+        # initialization and for all window resize
+        # event.
+        #
+        # Columns are recycled.
+
     cleanUpCell: (cellDiv)->
         # Will be called whenever a cell is
         # put out of the DOM
@@ -237,16 +282,26 @@ class Painter
     cleanUpHeader: (headerDiv)->
         # Will be called whenever a column is
         # put out of the DOM
+    
+    cleanUpFooter: (footerDiv)->
+        # Will be called whenever a column is
+        # put out of the DOM
 
     cleanUp: (table)->
         for _,cell of table.cells
             @cleanUpCell cell
-        for _,header of table.columns
+        for _,header of table.headers
             @cleanUpHeader header
+        for _,footer of table.footers
+            @cleanUpFooter footer
 
     fillHeader: (headerDiv, data)->
         # Fills and style a column div.
         headerDiv.textContent = data
+
+    fillFooter: (footerDiv, data)->
+        # Fills and style a column div.
+        footerDiv.textContent = data
 
     fillCell: (cellDiv, data)->
         # Fills and style a cell div.
@@ -257,6 +312,12 @@ class Painter
         # Its content is not in cache
         # and needs to be fetched
         headerDiv.textContent = "NA"
+
+    fillFooterPending: (footerDiv)->
+        # Mark a column footer as pending.
+        # Its content is not in cache
+        # and needs to be fetched
+        footerDiv.textContent = "NA"
 
     fillCellPending: (cellDiv)->
         # Mark a cell content as pending
@@ -298,7 +359,7 @@ class EventRegister
 
 class ScrollBarProxy
 
-    constructor: (@container, @headerContainer, @W, @H, eventRegister, @visible=true, @enableDragMove=true)->
+    constructor: (@container, @headerContainer, @footerContainer, @W, @H, eventRegister, @visible=true, @enableDragMove=true)->
         @verticalScrollbar = document.createElement "div"
         @verticalScrollbar.className += " fattable-v-scrollbar"
         @horizontalScrollbar = document.createElement "div"
@@ -450,8 +511,15 @@ class ScrollBarProxy
             if has_scrolled
                 evt.preventDefault()
 
+        onMouseWheelFooter = (evt)=>
+            [deltaX, _] = getDelta evt
+            has_scrolled = @setScrollXY @scrollLeft - deltaX, @scrollTop
+            if has_scrolled
+                evt.preventDefault()
+
         eventRegister.bind @container, supportedEvent, onMouseWheel
         eventRegister.bind @headerContainer, supportedEvent, onMouseWheelHeader
+        eventRegister.bind @footerContainer, supportedEvent, onMouseWheelFooter
 
     onScroll: (x,y)->
 
@@ -511,6 +579,7 @@ class TableView
         @readRequiredParameter parameters, "columnWidths"
         @readRequiredParameter parameters, "rowHeight"
         @readRequiredParameter parameters, "headerHeight"
+        @readRequiredParameter parameters, "footerHeight"
         @readRequiredParameter parameters, "scrollBarVisible", true
         @readRequiredParameter parameters, "enableDragMove", true
 
@@ -530,6 +599,8 @@ class TableView
     getContainerDimension: ->
         @w = @container.offsetWidth
         @h = @container.offsetHeight - @headerHeight
+        if @model.hasFooter()
+            @h -= @footerHeight
         @nbColsVisible = Math.min( smallest_diff_subsequence(@columnOffset, @w) + 2, @columnWidths.length)
         @nbRowsVisible = Math.min( (@h / @rowHeight | 0) + 2, @nbRows)
 
@@ -548,13 +619,15 @@ class TableView
         @container.innerHTML = ""
         @bodyContainer = null
         @headerContainer = null
+        @footerContainer = null
 
     setup: ->
         @cleanUp()
         @getContainerDimension()
 
         # can be called when resizing the window
-        @columns = {}
+        @headers = {}
+        @footers = {}
         @cells = {}
 
         @container.innerHTML = ""
@@ -569,6 +642,18 @@ class TableView
         @headerViewport.style.width = @w + "px"
         @headerViewport.style.height = @headerHeight + "px"
         @headerContainer.appendChild @headerViewport
+
+        # footer container
+
+        @footerContainer = document.createElement "div"
+        @footerContainer.className += " fattable-footer-container";
+        @footerContainer.style.height = @footerHeight + "px";
+        
+        @footerViewport = document.createElement "div"
+        @footerViewport.className = "fattable-viewport"
+        @footerViewport.style.width = @w + "px"
+        @footerViewport.style.height = @footerHeight + "px"
+        @footerContainer.appendChild @footerViewport
 
         # body container 
         @bodyContainer = document.createElement "div"
@@ -594,21 +679,31 @@ class TableView
             el.style.height = @headerHeight + "px"
             el.pending = false
             @painter.setupHeader el
-            @columns[c] = el
+            @headers[c] = el
             @headerViewport.appendChild el
+
+            el = document.createElement "div"
+            el.style.height = @footerHeight + "px"
+            el.pending = false
+            @painter.setupFooter el
+            @footers[c] = el
+            @footerViewport.appendChild el
 
         @firstVisibleRow = @nbRowsVisible
         @firstVisibleColumn = @nbColsVisible
         @display 0,0
         @container.appendChild @bodyContainer
         @container.appendChild @headerContainer
+        @container.appendChild @footerContainer
         @bodyContainer.appendChild @bodyViewport
         @refreshAllContent()
-        @scroll = new ScrollBarProxy @bodyContainer, @headerContainer, @W, @H, @eventRegister, @scrollBarVisible, @enableDragMove
+        @scroll = new ScrollBarProxy @bodyContainer, @headerContainer, @footerContainer, @W, @H, @eventRegister, @scrollBarVisible, @enableDragMove
         onScroll = (x,y)=>
             [i,j] = @leftTopCornerFromXY x,y
             @display i,j
-            for _, col of @columns
+            for _, col of @headers
+                col.style[prefixedTransformCssKey] = "translate(" + (col.left - x) + "px, 0px)"
+            for _, col of @footers
                 col.style[prefixedTransformCssKey] = "translate(" + (col.left - x) + "px, 0px)"
             for _, cell of @cells
                 cell.style[prefixedTransformCssKey] = "translate(" + (cell.left - x) + "px," + (cell.top - y) + "px)"
@@ -620,12 +715,18 @@ class TableView
 
     refreshAllContent: (evenNotPending=false)->
         for j in [@firstVisibleColumn ... @firstVisibleColumn + @nbColsVisible] by 1
-            header = @columns[j]
+            header = @headers[j]
             do (header)=>
                 if evenNotPending or header.pending
                     @model.getHeader j, (data)=>
                         header.pending = false
                         @painter.fillHeader header, data
+            footer = @footers[j]
+            do (footer)=>
+                if evenNotPending or footer.pending
+                    @model.getFooter j, (data)=>
+                        footer.pending = false
+                        @painter.fillFooter footer, data
             for i in [@firstVisibleRow ... @firstVisibleRow + @nbRowsVisible] by 1
                 k = i + "," + j
                 cell = @cells[k]
@@ -644,10 +745,12 @@ class TableView
 
     display: (i,j)->
         @headerContainer.style.display = "none"
+        @footerContainer.style.display = "none"
         @bodyContainer.style.display = "none"
         @moveX j
         @moveY i
         @headerContainer.style.display = ""
+        @footerContainer.style.display = ""
         @bodyContainer.style.display = ""
 
 
@@ -670,8 +773,8 @@ class TableView
             col_width = @columnWidths[dest_j] + "px"
 
             # move the column header
-            header = @columns[orig_j]
-            delete @columns[orig_j]
+            header = @headers[orig_j]
+            delete @headers[orig_j]
             if @model.hasHeader dest_j
                 @model.getHeader dest_j, (data)=>
                     header.pending = false
@@ -681,7 +784,21 @@ class TableView
                 @painter.fillHeaderPending header
             header.left = col_x
             header.style.width = col_width
-            @columns[dest_j] = header
+            @headers[dest_j] = header
+
+            # move the column footer
+            footer = @footers[orig_j]
+            delete @footers[orig_j]
+            if @model.hasFooter dest_j
+                @model.getFooter dest_j, (data)=>
+                    footer.pending = false
+                    @painter.fillFooter footer, data
+            else if not footer.pending
+                footer.pending = true
+                @painter.fillFooterPending footer
+            footer.left = col_x
+            footer.style.width = col_width
+            @footers[dest_j] = footer
 
             # move the cells.
             for i in [ last_i...last_i + @nbRowsVisible] by 1
